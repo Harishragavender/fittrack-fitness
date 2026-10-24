@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FitTrack - Workout Planner | Full-Stack Flask + SQLite</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{limebrand:'#C8FF2E',darkbg:'#070B09',card:'#111814',card2:'#161F1A',muted:'#8AA39A'},fontFamily:{inter:['Inter','sans-serif'],grotesk:['Space Grotesk','sans-serif']}}}}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{background:#070B09;color:#EAF2ED;font-family:Inter,sans-serif;overflow-x:hidden}
+.font-grotesk{font-family:'Space Grotesk',sans-serif}.mono{font-family:'JetBrains Mono',monospace}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:#0B1210}::-webkit-scrollbar-thumb{background:#2A3A33;border-radius:8px}::-webkit-scrollbar-thumb:hover{background:#C8FF2E}
+.orb{position:fixed;border-radius:50%;filter:blur(120px);opacity:.18;pointer-events:none;z-index:0}
+.glass{background:rgba(255,255,255,.04);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08)}
+.card{background:linear-gradient(145deg,#111814,#0E1411);border:1px solid rgba(255,255,255,.08);border-radius:18px}
+.card-hover{transition:.25s}.card-hover:hover{transform:translateY(-4px);border-color:rgba(200,255,46,.4);box-shadow:0 20px 50px -15px rgba(200,255,46,.15)}
+.btn-lime{background:#C8FF2E;color:#070B09;font-weight:700;border-radius:12px;transition:.2s;box-shadow:0 8px 24px -6px rgba(200,255,46,.4)}
+.btn-lime:hover{background:#D8FF6A;transform:translateY(-1px);box-shadow:0 12px 30px -6px rgba(200,255,46,.5)}
+.btn-ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;transition:.2s}
+.btn-ghost:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
+.btn-danger{background:rgba(255,80,80,.12);border:1px solid rgba(255,80,80,.3);color:#FF9A9A;border-radius:12px}.btn-danger:hover{background:rgba(255,80,80,.2)}
+.inp{background:#0B1210;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:.75rem 1rem;width:100%;color:#fff;outline:none;transition:.2s}
+.inp:focus{border-color:#C8FF2E;box-shadow:0 0 0 3px rgba(200,255,46,.15)}
+select.inp option{background:#111814}
+.chip{padding:.45rem 1rem;border-radius:999px;font-size:.82rem;font-weight:600;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:.2s;white-space:nowrap}
+.chip:hover{border-color:rgba(200,255,46,.5)}.chip.active{background:#C8FF2E;color:#070B09;border-color:#C8FF2E}
+.page{display:none}.page.active{display:block;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.navlink{display:flex;align-items:center;gap:.75rem;padding:.8rem 1rem;border-radius:12px;color:#8AA39A;font-weight:600;transition:.2s;cursor:pointer}
+.navlink:hover{background:rgba(255,255,255,.06);color:#fff}.navlink.active{background:#C8FF2E;color:#070B09}
+.badge{font-size:.7rem;font-weight:700;padding:.25rem .6rem;border-radius:999px;letter-spacing:.04em}
+.badge-lime{background:rgba(200,255,46,.15);color:#C8FF2E;border:1px solid rgba(200,255,46,.3)}
+.badge-muted{background:rgba(255,255,255,.08);color:#B8CCC4;border:1px solid rgba(255,255,255,.12)}
+.badge-diff-Beginner{background:rgba(74,222,128,.15);color:#4ADE80;border:1px solid rgba(74,222,128,.3)}
+.badge-diff-Intermediate{background:rgba(251,191,36,.15);color:#FBBF24;border:1px solid rgba(251,191,36,.3)}
+.badge-diff-Advanced{background:rgba(248,113,113,.15);color:#F87171;border:1px solid rgba(248,113,113,.3)}
+.modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal.open{display:flex}.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px)}
+.modal-box{position:relative;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;background:#101612;border:1px solid rgba(255,255,255,.12);border-radius:20px;animation:pop .3s ease}
+.modal-box.wide{max-width:860px}.modal-box.xwide{max-width:1000px}
+@keyframes pop{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#toastWrap{position:fixed;bottom:1.2rem;right:1.2rem;z-index:100;display:flex;flex-direction:column;gap:.6rem;max-width:360px}
+.toast{padding:.9rem 1.1rem;border-radius:14px;font-size:.9rem;font-weight:600;display:flex;align-items:center;gap:.7rem;animation:slideIn .3s ease;box-shadow:0 15px 40px rgba(0,0,0,.5)}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+.toast.success{background:#122A1A;border:1px solid rgba(200,255,46,.4);color:#D8FF9A}
+.toast.error{background:#2A1414;border:1px solid rgba(255,100,100,.4);color:#FFB4B4}
+.toast.info{background:#13202A;border:1px solid rgba(100,180,255,.4);color:#B8D8FF}
+.ex-img{height:160px;object-fit:cover;width:100%}
+.fileitem{padding:.55rem .8rem;border-radius:10px;font-size:.82rem;cursor:pointer;display:flex;align-items:center;gap:.6rem;color:#9AB5AA;transition:.15s}
+.fileitem:hover{background:rgba(255,255,255,.06);color:#fff}.fileitem.active{background:rgba(200,255,46,.12);color:#C8FF2E;border:1px solid rgba(200,255,46,.25)}
+pre code{border-radius:0!important;background:transparent!important}
+.codewrap{background:#0A0F0D;border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden}
+.tbl th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#7A938A;text-align:left;padding:.7rem .9rem;border-bottom:1px solid rgba(255,255,255,.08)}
+.tbl td{padding:.8rem .9rem;border-bottom:1px solid rgba(255,255,255,.05);font-size:.88rem}
+.tbl tr:hover td{background:rgba(255,255,255,.02)}
+.stat-num{font-family:'Space Grotesk';font-size:1.9rem;font-weight:700}
+.builder-row{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:.9rem}
+#sidebar{transition:.3s}
+@media(max-width:1023px){#sidebar{position:fixed;left:0;top:0;bottom:0;z-index:60;transform:translateX(-105%)}#sidebar.open{transform:translateX(0)}}
+.auth-tab{flex:1;padding:.7rem;border-radius:12px;font-weight:700;text-align:center;cursor:pointer;color:#8AA39A;transition:.2s}
+.auth-tab.active{background:#C8FF2E;color:#070B09}
+.err{color:#FF9A9A;font-size:.78rem;margin-top:.3rem;display:none}.err.show{display:block}
+.progress-bar{height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#C8FF2E,#7AE582);border-radius:999px;transition:width .6s ease}
+.terminal{background:#050807;border:1px solid rgba(200,255,46,.2);border-radius:14px;font-family:'JetBrains Mono',monospace}
+.dot{width:10px;height:10px;border-radius:50%}
+</style>
+</head>
+<body>
+<div class="orb" style="width:500px;height:500px;background:#C8FF2E;top:-150px;right:-120px"></div>
+<div class="orb" style="width:400px;height:400px;background:#2DD4BF;bottom:-120px;left:-100px"></div>
+
+<!-- ============ AUTH VIEW ============ -->
+<div id="authView" class="min-h-screen grid lg:grid-cols-2 relative z-10">
+  <div class="hidden lg:flex flex-col justify-between p-10 relative overflow-hidden" style="background:linear-gradient(160deg,#0C1410 0%,#0A0F0D 60%);border-right:1px solid rgba(255,255,255,.08)">
+    <div class="absolute inset-0 opacity-20"><img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80&auto=format&fit=crop" class="w-full h-full object-cover" alt="gym"></div>
+    <div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(7,11,9,.4),rgba(7,11,9,.92))"></div>
+    <div class="relative">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl flex items-center justify-center font-grotesk font-bold text-lg" style="background:#C8FF2E;color:#070B09">FT</div>
+        <div><div class="font-grotesk font-bold text-xl">FitTrack</div><div class="text-xs text-muted tracking-widest uppercase">Workout Planner</div></div>
+      </div>
+      <h1 class="font-grotesk font-bold mt-10 leading-tight" style="font-size:3rem">Plan workouts.<br><span style="color:#C8FF2E">Track progress.</span><br>Stay consistent.</h1>
+      <p class="text-muted mt-4 max-w-md">A complete full-stack fitness dashboard. User accounts, 28-exercise library across 7 muscle groups, custom workout builder and completion history.</p>
+      <div class="grid grid-cols-2 gap-3 mt-8 max-w-md">
+        <div class="glass rounded-2xl p-4"><div class="font-grotesk font-bold text-2xl" style="color:#C8FF2E">28</div><div class="text-xs text-muted">Exercises in library</div></div>
+        <div class="glass rounded-2xl p-4"><div class="font-grotesk font-bold text-2xl" style="color:#C8FF2E">7</div><div class="text-xs text-muted">Muscle groups</div></div>
+        <div class="glass rounded-2xl p-4"><div class="font-grotesk font-bold text-2xl" style="color:#C8FF2E">5</div><div class="text-xs text-muted">SQLite tables</div></div>
+        <div class="glass rounded-2xl p-4"><div class="font-grotesk font-bold text-2xl" style="color:#C8FF2E">100%</div><div class="text-xs text-muted">Working features</div></div>
+      </div>
+    </div>
+    <div class="relative">
+      <div class="text-xs uppercase tracking-widest text-muted mb-3">Full-Stack Tech</div>
+      <div class="flex flex-wrap gap-2">
+        <span class="badge badge-lime">HTML5</span><span class="badge badge-lime">CSS3</span><span class="badge badge-lime">Vanilla JS</span><span class="badge badge-lime">Python Flask</span><span class="badge badge-lime">SQLite</span><span class="badge badge-lime">Jinja2</span>
+      </div>
+      <div class="terminal mt-4 p-4 text-sm"><span style="color:#C8FF2E">➜ fittrack</span> <span class="text-gray-400">pip install -r requirements.txt && python app.py</span></div>
+    </div>
+  </div>
+  <div class="flex items-center justify-center p-6 lg:p-12">
+    <div class="w-full max-w-md">
+      <div class="lg:hidden flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-grotesk font-bold" style="background:#C8FF2E;color:#070B09">FT</div>
+        <div class="font-grotesk font-bold text-lg">FitTrack <span class="text-muted font-normal text-sm">Workout Planner</span></div>
+      </div>
+      <div class="card p-8">
+        <div class="flex gap-2 p-1 rounded-2xl mb-6" style="background:rgba(255,255,255,.05)">
+          <div id="tabLogin" class="auth-tab active" onclick="switchAuth('login')">Login</div>
+          <div id="tabRegister" class="auth-tab" onclick="switchAuth('register')">Register</div>
+        </div>
+        <form id="loginForm" onsubmit="return doLogin(event)">
+          <h2 class="font-grotesk font-bold text-2xl">Welcome back</h2>
+          <p class="text-sm text-muted mb-6">Log in to access your dashboard.</p>
+          <label class="text-xs font-semibold text-muted uppercase tracking-wider">Email</label>
+          <input id="loginEmail" type="email" class="inp mt-1 mb-1" placeholder="you@example.com">
+          <div id="loginEmailErr" class="err">Enter a valid email address.</div>
+          <label class="text-xs font-semibold text-muted uppercase tracking-wider mt-4 block">Password</label>
+          <input id="loginPass" type="password" class="inp mt-1 mb-1" placeholder="••••••••">
+          <div id="loginPassErr" class="err">Password must be at least 6 characters.</div>
+          <button class="btn-lime w-full py-3 mt-6" type="submit">Log In →</button>
+          <button type="button" onclick="demoLogin()" class="btn-ghost w-full py-3 mt-3 text-sm font-semibold">⚡ One-click Demo Login <span class="text-muted font-normal">(demo@fittrack.io)</span></button>
+        </form>
+        <form id="registerForm" class="hidden" onsubmit="return doRegister(event)">
+          <h2 class="font-grotesk font-bold text-2xl">Create account</h2>
+          <p class="text-sm text-muted mb-6">Start building workouts in seconds.</p>
+          <label class="text-xs font-semibold text-muted uppercase tracking-wider">Full name</label>
+          <input id="regName" class="inp mt-1 mb-1" placeholder="Alex Carter">
+          <div id="regNameErr" class="err">Name must be at least 2 characters.</div>
+          <label class="text-xs font-semibold text-muted uppercase tracking-wider mt-4 block">Email</label>
+          <input id="regEmail" type="email" class="inp mt-1 mb-1" placeholder="you@example.com">
+          <div id="regEmailErr" class="err">Enter a valid email address.</div>
+          <label class="text-xs font-semibold text-muted uppercase tracking-wider mt-4 block">Password</label>
+          <input id="regPass" type="password" class="inp mt-1 mb-1" placeholder="Min. 6 characters">
+          <div id="regPassErr" class="err">Password must be at least 6 characters.</div>
+          <button class="btn-lime w-full py-3 mt-6" type="submit">Create Account →</button>
+          <p class="text-xs text-muted mt-4 text-center">Passwords are hashed (SHA-256 / Werkzeug in Flask backend). Sessions isolate your data.</p>
+        </form>
+      </div>
+      <div class="flex items-center justify-center gap-2 mt-5 text-xs text-muted">
+        <span class="dot" style="background:#4ADE80"></span> Live demo mirrors Flask + SQLite logic
+        <span>•</span> Full backend source included in Codebase tab
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP VIEW ============ -->
+<div id="appView" class="hidden min-h-screen lg:flex relative z-10">
+  <div id="sidebarOverlay" class="fixed inset-0 bg-black/70 z-50 hidden lg:hidden" onclick="toggleSidebar(false)"></div>
+  <aside id="sidebar" class="w-72 shrink-0 p-5 flex flex-col min-h-screen lg:min-h-0 lg:sticky lg:top-0 lg:h-screen" style="background:#0B100D;border-right:1px solid rgba(255,255,255,.08)">
+    <div class="flex items-center gap-3 px-1">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center font-grotesk font-bold" style="background:#C8FF2E;color:#070B09">FT</div>
+      <div><div class="font-grotesk font-bold">FitTrack</div><div class="text-[11px] text-muted uppercase tracking-widest">Workout Planner</div></div>
+    </div>
+    <div class="mt-6 text-[11px] uppercase tracking-widest text-muted px-3 mb-2">Menu</div>
+    <nav class="space-y-1">
+      <div class="navlink active" data-page="dashboard" onclick="setPage('dashboard')">📊 Dashboard</div>
+      <div class="navlink" data-page="exercises" onclick="setPage('exercises')">🏋️ Exercises</div>
+      <div class="navlink" data-page="workouts" onclick="setPage('workouts')">📝 My Workouts <span id="navWCount" class="ml-auto badge badge-lime">0</span></div>
+      <div class="navlink" data-page="progress" onclick="setPage('progress')">📈 Progress</div>
+      <div class="navlink" data-page="codebase" onclick="setPage('codebase')">💻 Flask Source Code</div>
+    </nav>
+    <div class="mt-6 card p-4">
+      <div class="text-xs font-bold mb-1">▶ Run backend</div>
+      <div class="mono text-[11px] p-2 rounded-lg" style="background:#050807;color:#C8FF2E">python app.py</div>
+      <div class="text-[11px] text-muted mt-2">Flask + SQLite + Jinja2. Full project in Codebase tab.</div>
+    </div>
+    <div class="mt-auto pt-6">
+      <div class="card p-4 flex items-center gap-3">
+        <div id="userAvatar" class="w-10 h-10 rounded-full flex items-center justify-center font-bold" style="background:linear-gradient(135deg,#C8FF2E,#2DD4BF);color:#070B09">A</div>
+        <div class="min-w-0 flex-1"><div id="userName" class="font-bold text-sm truncate">User</div><div id="userEmail" class="text-xs text-muted truncate">email</div></div>
+        <button onclick="doLogout()" title="Logout" class="btn-ghost px-3 py-2 text-sm">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="flex-1 flex flex-col min-w-0">
+    <header class="sticky top-0 z-40 px-4 lg:px-8 py-4 flex items-center gap-4" style="background:rgba(7,11,9,.85);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07)">
+      <button class="lg:hidden btn-ghost px-3 py-2" onclick="toggleSidebar(true)">☰</button>
+      <div><h1 id="pageTitle" class="font-grotesk font-bold text-xl">Dashboard</h1><p id="pageSub" class="text-xs text-muted">Overview of your training</p></div>
+      <div class="ml-auto flex items-center gap-2">
+        <div class="hidden sm:flex items-center gap-2 glass rounded-full px-4 py-2 text-sm font-semibold"><span>🔥</span><span id="streakBadge">0 day streak</span></div>
+        <button onclick="openBuilder()" class="btn-lime px-4 py-2 text-sm hidden sm:block">+ New Workout</button>
+      </div>
+    </header>
+    <main class="p-4 lg:p-8 pb-24 lg:pb-8 max-w-[1200px] w-full mx-auto">
+
+      <!-- DASHBOARD -->
+      <section id="page-dashboard" class="page active">
+        <div class="card p-6 lg:p-8 relative overflow-hidden">
+          <div class="absolute right-0 top-0 w-72 h-full opacity-25 hidden md:block"><img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80&auto=format&fit=crop" class="w-full h-full object-cover" style="mask-image:linear-gradient(90deg,transparent,black)" alt=""></div>
+          <div class="relative">
+            <div class="badge badge-lime mb-3">● LIVE DASHBOARD</div>
+            <h2 class="font-grotesk font-bold text-3xl">Hey <span id="dashName" style="color:#C8FF2E">Athlete</span> 👋</h2>
+            <p class="text-muted mt-1">Here's your training snapshot. Keep the momentum going.</p>
+            <div class="flex flex-wrap gap-3 mt-5">
+              <button onclick="openBuilder()" class="btn-lime px-5 py-2.5 text-sm">+ Build Workout</button>
+              <button onclick="setPage('exercises')" class="btn-ghost px-5 py-2.5 text-sm font-semibold">Browse 28 Exercises</button>
+              <button onclick="setPage('codebase')" class="btn-ghost px-5 py-2.5 text-sm font-semibold">💻 View Flask Code</button>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+          <div class="card card-hover p-5"><div class="text-xs text-muted uppercase tracking-wider font-semibold">My Workouts</div><div id="statWorkouts" class="stat-num mt-1">0</div><div class="text-xs mt-1" style="color:#C8FF2E">▸ saved plans</div></div>
+          <div class="card card-hover p-5"><div class="text-xs text-muted uppercase tracking-wider font-semibold">Completions</div><div id="statCompletions" class="stat-num mt-1">0</div><div class="text-xs mt-1" style="color:#C8FF2E">▸ logged sessions</div></div>
+          <div class="card card-hover p-5"><div class="text-xs text-muted uppercase tracking-wider font-semibold">Total Volume</div><div id="statVolume" class="stat-num mt-1">0</div><div class="text-xs mt-1 text-muted">kg lifted (sets×reps×kg)</div></div>
+          <div class="card card-hover p-5"><div class="text-xs text-muted uppercase tracking-wider font-semibold">Day Streak</div><div id="statStreak" class="stat-num mt-1">0</div><div class="text-xs mt-1 text-muted">consecutive active days</div></div>
+        </div>
+        <div class="grid lg:grid-cols-5 gap-4 mt-5">
+          <div class="card p-5 lg:col-span-3"><div class="flex items-center justify-between mb-3"><h3 class="font-grotesk font-bold">Weekly Activity</h3><span class="badge badge-muted">last 7 days</span></div><div class="h-56"><canvas id="chartWeekly"></canvas></div></div>
+          <div class="card p-5 lg:col-span-2"><div class="flex items-center justify-between mb-3"><h3 class="font-grotesk font-bold">Muscle Focus</h3><span class="badge badge-muted">logged sets</span></div><div class="h-56 flex items-center justify-center"><canvas id="chartMuscle"></canvas></div></div>
+        </div>
+        <div class="grid lg:grid-cols-2 gap-4 mt-5">
+          <div class="card p-5"><div class="flex items-center justify-between mb-4"><h3 class="font-grotesk font-bold">Recent Workouts</h3><button onclick="setPage('workouts')" class="text-sm font-semibold" style="color:#C8FF2E">View all →</button></div><div id="recentWorkouts" class="space-y-3"></div></div>
+          <div class="card p-5"><div class="flex items-center justify-between mb-4"><h3 class="font-grotesk font-bold">Recent Completions</h3><button onclick="setPage('progress')" class="text-sm font-semibold" style="color:#C8FF2E">History →</button></div><div id="recentProgress" class="space-y-3"></div></div>
+        </div>
+      </section>
+
+      <!-- EXERCISES -->
+      <section id="page-exercises" class="page">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div class="relative flex-1"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted">🔍</span><input id="exSearch" oninput="renderExercises()" class="inp pl-11" placeholder="Search exercises... (e.g. squat, press, curl)"></div>
+          <select id="exDiff" onchange="renderExercises()" class="inp lg:w-48"><option value="">All difficulties</option><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select>
+        </div>
+        <div class="flex gap-2 mt-4 overflow-x-auto pb-2" id="muscleChips">
+          <div class="chip active" data-m="All" onclick="setMuscle('All')">All (28)</div>
+        </div>
+        <div class="flex items-center justify-between mt-4 mb-3"><div id="exCount" class="text-sm text-muted">28 exercises</div><div class="text-xs text-muted hidden sm:block">Click any card for details • 7 muscle groups</div></div>
+        <div id="exerciseGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+      </section>
+
+      <!-- WORKOUTS -->
+      <section id="page-workouts" class="page">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+          <div><h2 class="font-grotesk font-bold text-2xl">My Workouts</h2><p class="text-sm text-muted">Create plans with sets, reps & weight. Complete them to log progress.</p></div>
+          <button onclick="openBuilder()" class="btn-lime px-5 py-2.5 text-sm sm:ml-auto">+ Create Workout</button>
+        </div>
+        <div id="workoutList" class="grid lg:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- PROGRESS -->
+      <section id="page-progress" class="page">
+        <h2 class="font-grotesk font-bold text-2xl">Progress History</h2>
+        <p class="text-sm text-muted mb-5">Every completion is recorded with date, volume and sets.</p>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="card p-5"><div class="text-xs text-muted uppercase font-semibold">Sessions</div><div id="pSessions" class="stat-num">0</div></div>
+          <div class="card p-5"><div class="text-xs text-muted uppercase font-semibold">Total Sets</div><div id="pSets" class="stat-num">0</div></div>
+          <div class="card p-5"><div class="text-xs text-muted uppercase font-semibold">Total Reps</div><div id="pReps" class="stat-num">0</div></div>
+          <div class="card p-5"><div class="text-xs text-muted uppercase font-semibold">Volume (kg)</div><div id="pVolume" class="stat-num" style="color:#C8FF2E">0</div></div>
+        </div>
+        <div class="card p-5 mt-4"><div class="flex items-center justify-between mb-3"><h3 class="font-grotesk font-bold">Volume Over Time</h3><span class="badge badge-lime">kg per session</span></div><div class="h-60"><canvas id="chartVolume"></canvas></div></div>
+        <div class="card mt-4 overflow-hidden"><div class="p-5 pb-2 flex items-center justify-between"><h3 class="font-grotesk font-bold">Completion Log</h3><button onclick="clearProgress()" class="text-xs text-muted hover:text-red-300">Clear history</button></div><div class="overflow-x-auto"><table class="tbl w-full"><thead><tr><th>Date</th><th>Workout</th><th>Exercises</th><th>Sets</th><th>Volume</th><th></th></tr></thead><tbody id="progressTable"></tbody></table></div></div>
+      </section>
+
+      <!-- CODEBASE -->
+      <section id="page-codebase" class="page">
+        <div class="card p-6 lg:p-8" style="border-color:rgba(200,255,46,.25)">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="badge badge-lime">● COMPLETE FULL-STACK PROJECT</div>
+            <div class="badge badge-muted">Flask • SQLite • Jinja2 • Vanilla JS</div>
+          </div>
+          <h2 class="font-grotesk font-bold text-3xl mt-3">fittrack/ <span class="text-muted text-lg font-normal">— every file, ready to run</span></h2>
+          <p class="text-muted mt-2 max-w-2xl">This live demo runs the same logic in-browser. Below is the <b class="text-white">actual production backend source</b> — copy any file or download the whole project as ZIP, then run it locally. All SQL is parameterized, passwords are hashed with Werkzeug, auth uses Flask sessions.</p>
+          <div class="grid lg:grid-cols-3 gap-3 mt-5">
+            <div class="terminal p-4 text-xs leading-relaxed"><div class="text-muted mb-2">— TERMINAL —</div><div><span style="color:#C8FF2E">➜</span> pip install -r requirements.txt</div><div><span style="color:#C8FF2E">➜</span> python app.py</div><div class="text-muted">Running on http://127.0.0.1:5000</div></div>
+            <div class="card p-4" style="background:#0A0F0D"><div class="text-xs font-bold uppercase tracking-wider text-muted mb-2">Database — 5 tables</div><div class="flex flex-wrap gap-1.5 text-[11px] mono"><span class="badge badge-muted">users</span><span class="badge badge-muted">exercises</span><span class="badge badge-muted">workouts</span><span class="badge badge-muted">workout_exercises</span><span class="badge badge-muted">progress</span></div><div class="text-[11px] text-muted mt-2">database.db auto-created by init_db() on first run.</div></div>
+            <div class="flex flex-col gap-2 justify-center">
+              <button onclick="downloadZip()" class="btn-lime py-3 text-sm">⬇ Download Full Project (.zip)</button>
+              <button onclick="copyRunCommands()" class="btn-ghost py-3 text-sm font-semibold">⧉ Copy run commands</button>
+            </div>
+          </div>
+        </div>
+        <div class="grid lg:grid-cols-4 gap-4 mt-4">
+          <div class="card p-4 lg:col-span-1">
+            <div class="text-xs font-bold uppercase tracking-wider text-muted mb-3">📁 fittrack/</div>
+            <div id="fileTree" class="space-y-1 max-h-[520px] overflow-y-auto"></div>
+          </div>
+          <div class="lg:col-span-3">
+            <div class="codewrap">
+              <div class="flex items-center gap-3 px-4 py-3" style="background:#111814;border-bottom:1px solid rgba(255,255,255,.08)">
+                <div class="flex gap-1.5"><span class="dot" style="background:#FF5F57"></span><span class="dot" style="background:#FEBC2E"></span><span class="dot" style="background:#28C840"></span></div>
+                <div id="codePath" class="mono text-sm font-semibold" style="color:#C8FF2E">app.py</div>
+                <div id="codeMeta" class="text-[11px] text-muted ml-auto hidden sm:block"></div>
+                <button onclick="copyCurrentFile()" class="btn-ghost px-3 py-1.5 text-xs font-semibold">⧉ Copy</button>
+                <button onclick="downloadCurrentFile()" class="btn-ghost px-3 py-1.5 text-xs font-semibold">⬇ File</button>
+              </div>
+              <pre class="m-0 p-0 max-h-[560px] overflow-auto text-[12.5px] leading-relaxed"><code id="codeView" class="language-python"></code></pre>
+            </div>
+            <div class="text-xs text-muted mt-2">Tip: database.db is a binary SQLite file — it is generated automatically. The viewer shows its schema SQL instead.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex justify-around py-2" style="background:rgba(11,16,13,.95);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.1)">
+      <button onclick="setPage('dashboard')" class="mnav flex flex-col items-center text-[11px] font-semibold text-muted p-2" data-m="dashboard">📊<span>Home</span></button>
+      <button onclick="setPage('exercises')" class="mnav flex flex-col items-center text-[11px] font-semibold text-muted p-2" data-m="exercises">🏋️<span>Exercises</span></button>
+      <button onclick="openBuilder()" class="flex flex-col items-center justify-center w-14 h-14 -mt-7 rounded-2xl font-bold text-xl" style="background:#C8FF2E;color:#070B09;box-shadow:0 10px 30px rgba(200,255,46,.4)">+</button>
+      <button onclick="setPage('workouts')" class="mnav flex flex-col items-center text-[11px] font-semibold text-muted p-2" data-m="workouts">📝<span>Plans</span></button>
+      <button onclick="setPage('progress')" class="mnav flex flex-col items-center text-[11px] font-semibold text-muted p-2" data-m="progress">📈<span>Progress</span></button>
+    </nav>
+  </div>
+</div>
+
+<!-- Exercise Modal -->
+<div id="exerciseModal" class="modal"><div class="modal-bg" onclick="closeModal('exerciseModal')"></div>
+  <div class="modal-box"><div id="exModalBody"></div></div>
+</div>
+<!-- Builder Modal -->
+<div id="builderModal" class="modal"><div class="modal-bg" onclick="closeModal('builderModal')"></div>
+  <div class="modal-box wide p-6 lg:p-8">
+    <div class="flex items-center justify-between mb-1"><h3 id="builderTitle" class="font-grotesk font-bold text-2xl">Create Workout</h3><button onclick="closeModal('builderModal')" class="btn-ghost px-3 py-1.5">✕</button></div>
+    <p class="text-sm text-muted mb-5">Add exercises with sets × reps × weight. Everything validates before saving.</p>
+    <label class="text-xs font-bold uppercase tracking-wider text-muted">Workout name</label>
+    <input id="builderName" class="inp mt-1" placeholder="e.g. Push Day Strength">
+    <div id="builderNameErr" class="err">Name must be at least 3 characters.</div>
+    <div class="flex items-center justify-between mt-6 mb-3"><label class="text-xs font-bold uppercase tracking-wider text-muted">Exercises in this workout</label><button onclick="addBuilderRow()" class="btn-ghost px-3 py-1.5 text-xs font-bold">+ Add exercise</button></div>
+    <div id="builderRows" class="space-y-3"></div>
+    <div id="builderRowsErr" class="err mt-2">Add at least one valid exercise.</div>
+    <div class="card p-4 mt-5 flex flex-wrap gap-5 text-sm" style="background:#0A0F0D"><div><span class="text-muted">Exercises:</span> <b id="bSumEx">0</b></div><div><span class="text-muted">Total sets:</span> <b id="bSumSets">0</b></div><div><span class="text-muted">Est. volume:</span> <b id="bSumVol" style="color:#C8FF2E">0 kg</b></div></div>
+    <div class="flex gap-3 mt-6"><button onclick="closeModal('builderModal')" class="btn-ghost flex-1 py-3 font-semibold">Cancel</button><button onclick="saveWorkout()" class="btn-lime flex-1 py-3">💾 Save Workout</button></div>
+  </div>
+</div>
+<!-- Workout View Modal -->
+<div id="workoutViewModal" class="modal"><div class="modal-bg" onclick="closeModal('workoutViewModal')"></div>
+  <div class="modal-box wide p-6 lg:p-8"><div id="workoutViewBody"></div></div>
+</div>
+<!-- Confirm Modal -->
+<div id="confirmModal" class="modal"><div class="modal-bg" onclick="closeModal('confirmModal')"></div>
+  <div class="modal-box p-7 text-center" style="max-width:420px">
+    <div id="confirmIcon" class="text-4xl mb-3">⚠️</div>
+    <h3 id="confirmTitle" class="font-grotesk font-bold text-xl">Are you sure?</h3>
+    <p id="confirmMsg" class="text-sm text-muted mt-2">This cannot be undone.</p>
+    <div class="flex gap-3 mt-6"><button onclick="closeModal('confirmModal')" class="btn-ghost flex-1 py-2.5 font-semibold">Cancel</button><button id="confirmYes" class="btn-lime flex-1 py-2.5">Confirm</button></div>
+  </div>
+</div>
+<div id="toastWrap"></div>
+
+<script>
+/* ================= EXERCISE DATABASE (mirrors SQLite seed) ================= */
+const EXERCISES=[
+{id:1,name:"Barbell Bench Press",muscle_group:"Chest",difficulty:"Intermediate",description:"Foundational pressing movement on a flat bench. Works the chest, front shoulders and triceps while building pressing strength.",image_url:"https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=800&q=80&auto=format&fit=crop",instructions:["Lie on bench, feet flat, grip slightly wider than shoulders","Lower bar to mid-chest with elbows at 45 degrees","Press up until arms extend, keep core braced"]},
+{id:2,name:"Push-Up",muscle_group:"Chest",difficulty:"Beginner",description:"Classic bodyweight pressing exercise. Trains chest, shoulders, triceps and core stability with no equipment.",image_url:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80&auto=format&fit=crop",instructions:["Start in plank, hands under shoulders","Lower chest toward floor keeping body straight","Push back up to full arm extension"]},
+{id:3,name:"Incline Dumbbell Press",muscle_group:"Chest",difficulty:"Intermediate",description:"Pressing variation on an incline bench. Emphasizes the upper chest with independent dumbbell control.",image_url:"https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80&auto=format&fit=crop",instructions:["Set bench to 30-45 degrees, dumbbells at shoulders","Press up and slightly together","Lower slowly to chest level and repeat"]},
+{id:4,name:"Dumbbell Chest Fly",muscle_group:"Chest",difficulty:"Beginner",description:"Isolation movement with a wide arc. Stretches and contracts the chest through a full range of motion.",image_url:"https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=800&q=80&auto=format&fit=crop",instructions:["Lie on bench, dumbbells above chest, slight elbow bend","Open arms wide in an arc until chest stretch","Bring weights back together over chest"]},
+{id:5,name:"Pull-Up",muscle_group:"Back",difficulty:"Advanced",description:"Vertical pulling bodyweight movement. Builds the lats, upper back and biceps with strict hanging form.",image_url:"https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=800&q=80&auto=format&fit=crop",instructions:["Hang from bar with overhand grip, arms extended","Pull chin above bar by driving elbows down","Lower with control to full hang"]},
+{id:6,name:"Bent-Over Barbell Row",muscle_group:"Back",difficulty:"Intermediate",description:"Hip-hinged rowing movement. Develops lats, traps, rhomboids and lower-back endurance.",image_url:"https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&q=80&auto=format&fit=crop",instructions:["Hinge at hips, flat back, bar below knees","Row bar to lower ribs, squeeze shoulder blades","Lower slowly without rounding back"]},
+{id:7,name:"Lat Pulldown",muscle_group:"Back",difficulty:"Beginner",description:"Cable-based vertical pull. Great for learning lat engagement with adjustable resistance.",image_url:"https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800&q=80&auto=format&fit=crop",instructions:["Sit tall, grip bar wide, chest up","Pull bar to upper chest, elbows down","Return slowly to full stretch"]},
+{id:8,name:"Conventional Deadlift",muscle_group:"Back",difficulty:"Advanced",description:"Hip-hinge lift from the floor. Trains the entire posterior chain including back, glutes and hamstrings.",image_url:"https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=800&q=80&auto=format&fit=crop",instructions:["Stand with bar over mid-foot, grip outside knees","Push floor away, keep bar close and back flat","Stand tall, then hinge to lower with control"]},
+{id:9,name:"Back Squat",muscle_group:"Legs",difficulty:"Intermediate",description:"Barbell squat with bar on upper back. Primary developer of quads, glutes and overall leg strength.",image_url:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80&auto=format&fit=crop",instructions:["Bar on upper back, feet shoulder width","Sit down keeping chest up and knees tracking toes","Drive up through mid-foot to standing"]},
+{id:10,name:"Romanian Deadlift",muscle_group:"Legs",difficulty:"Intermediate",description:"Hip-hinge with soft knees. Targets hamstrings and glutes through a loaded stretch.",image_url:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80&auto=format&fit=crop",instructions:["Hold bar at hips, feet hip width","Push hips back, slide bar down thighs","Feel hamstring stretch, drive hips forward"]},
+{id:11,name:"Walking Lunge",muscle_group:"Legs",difficulty:"Beginner",description:"Alternating forward stepping lunge. Builds single-leg strength, balance and coordination.",image_url:"https://images.unsplash.com/photo-1434608519344-49d77a699e1d?w=800&q=80&auto=format&fit=crop",instructions:["Step forward, lower until both knees near 90 degrees","Drive through front heel to stand","Alternate legs with each step"]},
+{id:12,name:"Leg Press",muscle_group:"Legs",difficulty:"Beginner",description:"Machine-based pressing for legs. Allows heavy quad and glute work with back support.",image_url:"https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&q=80&auto=format&fit=crop",instructions:["Sit with back flat, feet on platform","Lower platform until knees near 90 degrees","Press up without locking knees"]},
+{id:13,name:"Overhead Barbell Press",muscle_group:"Shoulders",difficulty:"Intermediate",description:"Standing vertical press. Develops shoulders and triceps with full-body bracing.",image_url:"https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&q=80&auto=format&fit=crop",instructions:["Bar at collarbone, grip just outside shoulders","Press overhead while squeezing glutes","Lower to start with control"]},
+{id:14,name:"Dumbbell Lateral Raise",muscle_group:"Shoulders",difficulty:"Beginner",description:"Side-arm raise isolation. Targets the lateral deltoid for shoulder width and control.",image_url:"https://images.unsplash.com/photo-1590487988256-9ed24133863e?w=800&q=80&auto=format&fit=crop",instructions:["Stand tall, dumbbells at sides","Raise arms to shoulder height with soft elbows","Lower slowly, avoid swinging"]},
+{id:15,name:"Dumbbell Front Raise",muscle_group:"Shoulders",difficulty:"Beginner",description:"Front-arm raise isolation. Focuses on the front deltoid with strict form.",image_url:"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&q=80&auto=format&fit=crop",instructions:["Stand tall, weights in front of thighs","Raise one or both arms to shoulder height","Lower with control, keep torso still"]},
+{id:16,name:"Arnold Press",muscle_group:"Shoulders",difficulty:"Advanced",description:"Rotating dumbbell press. Hits all three deltoid heads through rotation plus press.",image_url:"https://images.unsplash.com/photo-1550345332-09e3ac987658?w=800&q=80&auto=format&fit=crop",instructions:["Start with palms facing you at chin level","Rotate palms out while pressing overhead","Reverse the motion to return"]},
+{id:17,name:"Barbell Curl",muscle_group:"Arms",difficulty:"Beginner",description:"Standing elbow-flexion movement. Primary builder of biceps size and strength.",image_url:"https://images.unsplash.com/photo-1605296867424-35fc25c9212a?w=800&q=80&auto=format&fit=crop",instructions:["Stand tall, bar at thighs, underhand grip","Curl to shoulders keeping elbows pinned","Lower slowly to full extension"]},
+{id:18,name:"Tricep Dips",muscle_group:"Arms",difficulty:"Intermediate",description:"Bodyweight pushing on parallel bars or bench. Emphasizes triceps with chest support.",image_url:"https://images.unsplash.com/photo-1598971639058-fab3c3109a00?w=800&q=80&auto=format&fit=crop",instructions:["Support yourself on bars, lean slightly forward","Lower until elbows near 90 degrees","Press back up without shrugging"]},
+{id:19,name:"Hammer Curl",muscle_group:"Arms",difficulty:"Beginner",description:"Neutral-grip dumbbell curl. Trains biceps and forearms with joint-friendly grip.",image_url:"https://images.unsplash.com/photo-1581009137042-c552e485697a?w=800&q=80&auto=format&fit=crop",instructions:["Hold dumbbells with palms facing each other","Curl to shoulders without rotating","Lower slowly to full hang"]},
+{id:20,name:"Skull Crusher",muscle_group:"Arms",difficulty:"Intermediate",description:"Lying tricep extension. Isolates the triceps through elbow extension.",image_url:"https://images.unsplash.com/photo-1519505907962-0a6cb0167c73?w=800&q=80&auto=format&fit=crop",instructions:["Lie on bench, bar above forehead, elbows stacked","Bend elbows to lower bar toward forehead","Extend back up without moving shoulders"]},
+{id:21,name:"Plank Hold",muscle_group:"Core",difficulty:"Beginner",description:"Isometric trunk hold. Builds deep core endurance, posture and total-body tension.",image_url:"https://images.unsplash.com/photo-1566241142559-40e1dab266c6?w=800&q=80&auto=format&fit=crop",instructions:["Forearms on floor, body in straight line","Brace abs and glutes, breathe steadily","Hold position without sagging hips"]},
+{id:22,name:"Russian Twist",muscle_group:"Core",difficulty:"Beginner",description:"Seated rotational movement. Trains obliques and trunk rotation control.",image_url:"https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80&auto=format&fit=crop",instructions:["Sit leaning back, feet grounded or lifted","Rotate torso side to side with control","Keep chest up and core braced"]},
+{id:23,name:"Hanging Leg Raise",muscle_group:"Core",difficulty:"Advanced",description:"Hanging hip-flexion exercise. Develops lower abs and grip with strict control.",image_url:"https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=800&q=80&auto=format&fit=crop",instructions:["Hang from bar with active shoulders","Raise knees or straight legs to 90 degrees","Lower slowly without swinging"]},
+{id:24,name:"Bicycle Crunch",muscle_group:"Core",difficulty:"Beginner",description:"Alternating elbow-to-knee crunch. Trains abs and obliques dynamically.",image_url:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80&auto=format&fit=crop",instructions:["Lie back, hands by head, legs lifted","Bring opposite elbow to knee while extending leg","Alternate sides in smooth rhythm"]},
+{id:25,name:"Burpee",muscle_group:"Full Body",difficulty:"Intermediate",description:"Squat-thrust to jump sequence. Combines legs, chest, core and conditioning in one move.",image_url:"https://images.unsplash.com/photo-1599058917765-a780eda07a3e?w=800&q=80&auto=format&fit=crop",instructions:["Squat down, place hands on floor","Jump feet back to plank, do a push-up","Jump feet in and explode upward"]},
+{id:26,name:"Kettlebell Swing",muscle_group:"Full Body",difficulty:"Intermediate",description:"Explosive hip-hinge swing. Trains glutes, hamstrings, back and power.",image_url:"https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=800&q=80&auto=format&fit=crop",instructions:["Hike bell between legs with flat back","Snap hips forward to swing to chest height","Let bell fall and repeat rhythmically"]},
+{id:27,name:"Clean and Press",muscle_group:"Full Body",difficulty:"Advanced",description:"Barbell clean plus overhead press. Full-body power, coordination and strength combo.",image_url:"https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=800&q=80&auto=format&fit=crop",instructions:["Deadlift bar, then explosively pull to shoulders","Catch in front rack with elbows high","Press overhead to full lockout"]},
+{id:28,name:"Mountain Climber",muscle_group:"Full Body",difficulty:"Beginner",description:"Plank-based alternating knee drive. Trains core, shoulders and conditioning.",image_url:"https://images.unsplash.com/photo-1434608519344-49d77a699e1d?w=800&q=80&auto=format&fit=crop",instructions:["Start in high plank, hands under shoulders","Drive one knee toward chest","Quickly alternate legs, hips level"]}
+];
+const MUSCLES=["Chest","Back","Legs","Shoulders","Arms","Core","Full Body"];
+
+/* ================= COMPLETE BACKEND SOURCE (Flask+SQLite+Jinja2) ================= */
+const BACKEND_FILES=[
+{path:"app.py",lang:"python",code:`import sqlite3
+import os
+from datetime import datetime
+from functools import wraps
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, g
+from werkzeug.security import generate_password_hash, check_password_hash
+
+app = Flask(__name__)
+app.secret_key = "fittrack-secret-key-change-in-production-2026"
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, "database.db")
+
+def get_db():
+    if "db" not in g:
+        g.db = sqlite3.connect(DATABASE)
+        g.db.row_factory = sqlite3.Row
+        g.db.execute("PRAGMA foreign_keys = ON")
+    return g.db
+
+@app.teardown_appcontext
+def close_db(error=None):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+def init_db():
+    db = sqlite3.connect(DATABASE)
+    db.execute("PRAGMA foreign_keys = ON")
+    cur = db.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL)")
+    cur.execute("CREATE TABLE IF NOT EXISTS exercises (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, muscle_group TEXT NOT NULL, difficulty TEXT NOT NULL, description TEXT NOT NULL, image_url TEXT)")
+    cur.execute("CREATE TABLE IF NOT EXISTS workouts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, name TEXT NOT NULL, created_at TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE)")
+    cur.execute("CREATE TABLE IF NOT EXISTS workout_exercises (id INTEGER PRIMARY KEY AUTOINCREMENT, workout_id INTEGER NOT NULL, exercise_id INTEGER NOT NULL, sets INTEGER NOT NULL, repetitions INTEGER NOT NULL, weight REAL NOT NULL DEFAULT 0, FOREIGN KEY (workout_id) REFERENCES workouts (id) ON DELETE CASCADE, FOREIGN KEY (exercise_id) REFERENCES exercises (id))")
+    cur.execute("CREATE TABLE IF NOT EXISTS progress (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, workout_id INTEGER, completed_at TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE, FOREIGN KEY (workout_id) REFERENCES workouts (id) ON DELETE SET NULL)")
+    cur.execute("SELECT COUNT(*) FROM exercises")
+    count = cur.fetchone()[0]
+    if count == 0:
+        seed = [
+            ("Barbell Bench Press", "Chest", "Intermediate", "Foundational press on flat bench for chest, shoulders and triceps.", "https://images.unsplash.com/photo-1532029837206-abbe2b7620e3?w=800&q=80&auto=format&fit=crop"),
+            ("Push-Up", "Chest", "Beginner", "Classic bodyweight press for chest, shoulders, triceps and core.", "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80&auto=format&fit=crop"),
+            ("Incline Dumbbell Press", "Chest", "Intermediate", "Incline press emphasizing upper chest with independent control.", "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80&auto=format&fit=crop"),
+            ("Dumbbell Chest Fly", "Chest", "Beginner", "Wide-arc isolation for chest stretch and contraction.", "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=800&q=80&auto=format&fit=crop"),
+            ("Pull-Up", "Back", "Advanced", "Vertical pull for lats, upper back and biceps.", "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?w=800&q=80&auto=format&fit=crop"),
+            ("Bent-Over Barbell Row", "Back", "Intermediate", "Hip-hinged row for lats, traps and rhomboids.", "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&q=80&auto=format&fit=crop"),
+            ("Lat Pulldown", "Back", "Beginner", "Cable vertical pull with adjustable resistance.", "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800&q=80&auto=format&fit=crop"),
+            ("Conventional Deadlift", "Back", "Advanced", "Floor pull for posterior chain strength.", "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=800&q=80&auto=format&fit=crop"),
+            ("Back Squat", "Legs", "Intermediate", "Barbell squat for quads, glutes and leg strength.", "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80&auto=format&fit=crop"),
+            ("Romanian Deadlift", "Legs", "Intermediate", "Hip hinge for hamstrings and glutes.", "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80&auto=format&fit=crop"),
+            ("Walking Lunge", "Legs", "Beginner", "Alternating lunge for single-leg strength and balance.", "https://images.unsplash.com/photo-1434608519344-49d77a699e1d?w=800&q=80&auto=format&fit=crop"),
+            ("Leg Press", "Legs", "Beginner", "Machine press for quads and glutes with back support.", "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800&q=80&auto=format&fit=crop"),
+            ("Overhead Barbell Press", "Shoulders", "Intermediate", "Standing press for shoulders and triceps.", "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&q=80&auto=format&fit=crop"),
+            ("Dumbbell Lateral Raise", "Shoulders", "Beginner", "Side raise for lateral deltoid.", "https://images.unsplash.com/photo-1590487988256-9ed24133863e?w=800&q=80&auto=format&fit=crop"),
+            ("Dumbbell Front Raise", "Shoulders", "Beginner", "Front raise for front deltoid.", "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&q=80&auto=format&fit=crop"),
+            ("Arnold Press", "Shoulders", "Advanced", "Rotating press for all deltoid heads.", "https://images.unsplash.com/photo-1550345332-09e3ac987658?w=800&q=80&auto=format&fit=crop"),
+            ("Barbell Curl", "Arms", "Beginner", "Standing curl for biceps strength.", "https://images.unsplash.com/photo-1605296867424-35fc25c9212a?w=800&q=80&auto=format&fit=crop"),
+            ("Tricep Dips", "Arms", "Intermediate", "Bodyweight press emphasizing triceps.", "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?w=800&q=80&auto=format&fit=crop"),
+            ("Hammer Curl", "Arms", "Beginner", "Neutral-grip curl for biceps and forearms.", "https://images.unsplash.com/photo-1581009137042-c552e485697a?w=800&q=80&auto=format&fit=crop"),
+            ("Skull Crusher", "Arms", "Intermediate", "Lying extension isolating triceps.", "https://images.unsplash.com/photo-1519505907962-0a6cb0167c73?w=800&q=80&auto=format&fit=crop"),
+            ("Plank Hold", "Core", "Beginner", "Isometric hold for core endurance and posture.", "https://images.unsplash.com/photo-1566241142559-40e1dab266c6?w=800&q=80&auto=format&fit=crop"),
+            ("Russian Twist", "Core", "Beginner", "Seated rotation for obliques.", "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&q=80&auto=format&fit=crop"),
+            ("Hanging Leg Raise", "Core", "Advanced", "Hanging raise for lower abs and grip.", "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=800&q=80&auto=format&fit=crop"),
+            ("Bicycle Crunch", "Core", "Beginner", "Alternating crunch for abs and obliques.", "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&q=80&auto=format&fit=crop"),
+            ("Burpee", "Full Body", "Intermediate", "Squat-thrust to jump combining full body.", "https://images.unsplash.com/photo-1599058917765-a780eda07a3e?w=800&q=80&auto=format&fit=crop"),
+            ("Kettlebell Swing", "Full Body", "Intermediate", "Explosive hinge for glutes and power.", "https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=800&q=80&auto=format&fit=crop"),
+            ("Clean and Press", "Full Body", "Advanced", "Clean plus press for power and strength.", "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?w=800&q=80&auto=format&fit=crop"),
+            ("Mountain Climber", "Full Body", "Beginner", "Plank knee drive for core and conditioning.", "https://images.unsplash.com/photo-1434608519344-49d77a699e1d?w=800&q=80&auto=format&fit=crop")
+        ]
+        cur.executemany("INSERT INTO exercises (name, muscle_group, difficulty, description, image_url) VALUES (?, ?, ?, ?, ?)", seed)
+    db.commit()
+    db.close()
+
+def login_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Please log in to continue.", "warning")
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped
+
+def get_current_user():
+    if "user_id" not in session:
+        return None
+    db = get_db()
+    return db.execute("SELECT id, name, email FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+
+@app.route("/")
+def index():
+    user = get_current_user()
+    if user is None:
+        return render_template("index.html", user=None)
+    db = get_db()
+    wc = db.execute("SELECT COUNT(*) FROM workouts WHERE user_id = ?", (user["id"],)).fetchone()[0]
+    comp = db.execute("SELECT COUNT(*) FROM progress WHERE user_id = ?", (user["id"],)).fetchone()[0]
+    vol = db.execute("SELECT COALESCE(SUM(we.sets * we.repetitions * we.weight),0) FROM progress p JOIN workouts w ON p.workout_id = w.id JOIN workout_exercises we ON we.workout_id = w.id WHERE p.user_id = ?", (user["id"],)).fetchone()[0]
+    recent = db.execute("SELECT w.id, w.name, w.created_at, COUNT(we.id) as ex_count FROM workouts w LEFT JOIN workout_exercises we ON we.workout_id = w.id WHERE w.user_id = ? GROUP BY w.id ORDER BY w.id DESC LIMIT 3", (user["id"],)).fetchall()
+    hist = db.execute("SELECT p.completed_at, w.name FROM progress p LEFT JOIN workouts w ON p.workout_id = w.id WHERE p.user_id = ? ORDER BY p.completed_at DESC LIMIT 5", (user["id"],)).fetchall()
+    return render_template("index.html", user=user, workouts_count=wc, completions=comp, total_volume=round(vol,1), recent=recent, recent_progress=hist)
+
+@app.route("/exercises")
+def exercises():
+    search = request.args.get("search", "").strip()
+    muscle = request.args.get("muscle_group", "").strip()
+    diff = request.args.get("difficulty", "").strip()
+    db = get_db()
+    q = "SELECT * FROM exercises WHERE 1=1"
+    params = []
+    if search:
+        q += " AND (name LIKE ? OR description LIKE ?)"
+        params.extend(["%" + search + "%", "%" + search + "%"])
+    if muscle:
+        q += " AND muscle_group = ?"
+        params.append(muscle)
+    if diff:
+        q += " AND difficulty = ?"
+        params.append(diff)
+    q += " ORDER BY muscle_group, name"
+    rows = db.execute(q, params).fetchall()
+    groups = ["Chest","Back","Legs","Shoulders","Arms","Core","Full Body"]
+    return render_template("exercises.html", exercises=rows, groups=groups, search=search, muscle_group=muscle, difficulty=diff, user=get_current_user())
+
+@app.route("/exercise/<int:exercise_id>")
+def exercise_detail(exercise_id):
+    db = get_db()
+    ex = db.execute("SELECT * FROM exercises WHERE id = ?", (exercise_id,)).fetchone()
+    if ex is None:
+        flash("Exercise not found.", "danger")
+        return redirect(url_for("exercises"))
+    related = db.execute("SELECT * FROM exercises WHERE muscle_group = ? AND id != ? LIMIT 3", (ex["muscle_group"], ex["id"])).fetchall()
+    return render_template("exercise.html", exercise=ex, related=related, user=get_current_user())
+
+@app.route("/workouts")
+@login_required
+def workouts():
+    db = get_db()
+    uid = session["user_id"]
+    rows = db.execute("SELECT * FROM workouts WHERE user_id = ? ORDER BY id DESC", (uid,)).fetchall()
+    result = []
+    for w in rows:
+        items = db.execute("SELECT we.sets, we.repetitions, we.weight, e.id as eid, e.name, e.muscle_group FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ?", (w["id"],)).fetchall()
+        vol = sum([r["sets"]*r["repetitions"]*(r["weight"] or 0) for r in items])
+        result.append({"workout": w, "items": items, "volume": round(vol,1)})
+    all_ex = db.execute("SELECT * FROM exercises ORDER BY muscle_group, name").fetchall()
+    return render_template("workouts.html", workouts=result, all_exercises=all_ex, user=get_current_user())
+
+@app.route("/workouts/create", methods=["POST"])
+@login_required
+def create_workout():
+    name = request.form.get("name","").strip()
+    ex_ids = request.form.getlist("exercise_id")
+    sets_l = request.form.getlist("sets")
+    reps_l = request.form.getlist("repetitions")
+    weight_l = request.form.getlist("weight")
+    if len(name) < 3:
+        flash("Workout name must be at least 3 characters.", "danger")
+        return redirect(url_for("workouts"))
+    if not ex_ids:
+        flash("Add at least one exercise.", "danger")
+        return redirect(url_for("workouts"))
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("INSERT INTO workouts (user_id, name, created_at) VALUES (?, ?, ?)", (session["user_id"], name, datetime.now().isoformat(timespec="seconds")))
+    wid = cur.lastrowid
+    for i in range(len(ex_ids)):
+        try:
+            eid = int(ex_ids[i]); s = int(sets_l[i]); r = int(reps_l[i]); wt = float(weight_l[i] or 0)
+        except ValueError:
+            continue
+        if s < 1 or s > 20 or r < 1 or r > 200 or wt < 0 or wt > 1000:
+            continue
+        chk = db.execute("SELECT id FROM exercises WHERE id = ?", (eid,)).fetchone()
+        if chk is None:
+            continue
+        cur.execute("INSERT INTO workout_exercises (workout_id, exercise_id, sets, repetitions, weight) VALUES (?, ?, ?, ?, ?)", (wid, eid, s, r, wt))
+    db.commit()
+    flash("Workout created successfully.", "success")
+    return redirect(url_for("workouts"))
+
+@app.route("/workouts/<int:workout_id>/edit", methods=["GET","POST"])
+@login_required
+def edit_workout(workout_id):
+    db = get_db()
+    w = db.execute("SELECT * FROM workouts WHERE id = ? AND user_id = ?", (workout_id, session["user_id"])).fetchone()
+    if w is None:
+        flash("Workout not found.", "danger")
+        return redirect(url_for("workouts"))
+    if request.method == "POST":
+        name = request.form.get("name","").strip()
+        if len(name) < 3:
+            flash("Name too short.", "danger")
+            return redirect(url_for("edit_workout", workout_id=workout_id))
+        db.execute("UPDATE workouts SET name = ? WHERE id = ?", (name, workout_id))
+        db.execute("DELETE FROM workout_exercises WHERE workout_id = ?", (workout_id,))
+        ex_ids = request.form.getlist("exercise_id")
+        sets_l = request.form.getlist("sets")
+        reps_l = request.form.getlist("repetitions")
+        weight_l = request.form.getlist("weight")
+        for i in range(len(ex_ids)):
+            try:
+                eid = int(ex_ids[i]); s = int(sets_l[i]); r = int(reps_l[i]); wt = float(weight_l[i] or 0)
+            except ValueError:
+                continue
+            db.execute("INSERT INTO workout_exercises (workout_id, exercise_id, sets, repetitions, weight) VALUES (?, ?, ?, ?, ?)", (workout_id, eid, s, r, wt))
+        db.commit()
+        flash("Workout updated.", "success")
+        return redirect(url_for("workouts"))
+    items = db.execute("SELECT * FROM workout_exercises WHERE workout_id = ?", (workout_id,)).fetchall()
+    all_ex = db.execute("SELECT * FROM exercises ORDER BY muscle_group, name").fetchall()
+    return render_template("workouts.html", workouts=None, edit_workout=w, edit_items=items, all_exercises=all_ex, user=get_current_user())
+
+@app.route("/workouts/<int:workout_id>/delete", methods=["POST"])
+@login_required
+def delete_workout(workout_id):
+    db = get_db()
+    db.execute("DELETE FROM workouts WHERE id = ? AND user_id = ?", (workout_id, session["user_id"]))
+    db.commit()
+    flash("Workout deleted.", "success")
+    return redirect(url_for("workouts"))
+
+@app.route("/workouts/<int:workout_id>/complete", methods=["POST"])
+@login_required
+def complete_workout(workout_id):
+    db = get_db()
+    w = db.execute("SELECT * FROM workouts WHERE id = ? AND user_id = ?", (workout_id, session["user_id"])).fetchone()
+    if w is None:
+        flash("Workout not found.", "danger")
+        return redirect(url_for("workouts"))
+    db.execute("INSERT INTO progress (user_id, workout_id, completed_at) VALUES (?, ?, ?)", (session["user_id"], workout_id, datetime.now().isoformat(timespec="seconds")))
+    db.commit()
+    flash("Workout logged as complete. Nice consistency.", "success")
+    return redirect(url_for("progress"))
+
+@app.route("/progress")
+@login_required
+def progress():
+    db = get_db()
+    uid = session["user_id"]
+    rows = db.execute("SELECT p.id, p.completed_at, w.name as wname, w.id as wid FROM progress p LEFT JOIN workouts w ON p.workout_id = w.id WHERE p.user_id = ? ORDER BY p.completed_at DESC", (uid,)).fetchall()
+    history = []
+    tsets = 0; treps = 0; tvol = 0
+    for r in rows:
+        items = []
+        vol = 0; ss = 0; rr = 0
+        if r["wid"]:
+            items = db.execute("SELECT we.sets, we.repetitions, we.weight, e.name FROM workout_exercises we JOIN exercises e ON we.exercise_id = e.id WHERE we.workout_id = ?", (r["wid"],)).fetchall()
+            for it in items:
+                ss += it["sets"]; rr += it["sets"]*it["repetitions"]; vol += it["sets"]*it["repetitions"]*(it["weight"] or 0)
+        tsets += ss; treps += rr; tvol += vol
+        history.append({"row": r, "ex_count": len(items), "sets": ss, "volume": round(vol,1)})
+    return render_template("progress.html", history=history, total_sessions=len(rows), total_sets=tsets, total_reps=treps, total_volume=round(tvol,1), user=get_current_user())
+
+@app.route("/api/exercises")
+def api_exercises():
+    db = get_db()
+    rows = db.execute("SELECT id, name, muscle_group, difficulty FROM exercises ORDER BY muscle_group, name").fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/register", methods=["GET","POST"])
+def register():
+    if request.method == "POST":
+        name = request.form.get("name","").strip()
+        email = request.form.get("email","").strip().lower()
+        pw = request.form.get("password","")
+        if len(name) < 2:
+            flash("Name too short.", "danger"); return redirect(url_for("register"))
+        if "@" not in email or "." not in email:
+            flash("Invalid email.", "danger"); return redirect(url_for("register"))
+        if len(pw) < 6:
+            flash("Password must be at least 6 characters.", "danger"); return redirect(url_for("register"))
+        db = get_db()
+        exists = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+        if exists:
+            flash("Email already registered. Please log in.", "warning"); return redirect(url_for("login"))
+        hashed = generate_password_hash(pw)
+        cur = db.cursor()
+        cur.execute("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", (name, email, hashed))
+        db.commit()
+        session["user_id"] = cur.lastrowid
+        session["user_name"] = name
+        flash("Account created. Welcome to FitTrack.", "success")
+        return redirect(url_for("index"))
+    return render_template("register.html", user=get_current_user())
+
+@app.route("/login", methods=["GET","POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email","").strip().lower()
+        pw = request.form.get("password","")
+        db = get_db()
+        u = db.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if u and check_password_hash(u["password"], pw):
+            session["user_id"] = u["id"]
+            session["user_name"] = u["name"]
+            flash("Logged in successfully.", "success")
+            return redirect(url_for("index"))
+        flash("Invalid email or password.", "danger")
+        return redirect(url_for("login"))
+    return render_template("login.html", user=get_current_user())
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Logged out.", "success")
+    return redirect(url_for("login"))
+
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True, host="127.0.0.1", port=5000)`},
+{path:"requirements.txt",lang:"plaintext",code:`Flask==3.0.0
+Werkzeug==3.0.1`},
+{path:"database.db",lang:"sql",code:`-- database.db is a binary SQLite file.
+-- It is AUTO-CREATED by init_db() in app.py on first run (python app.py).
+-- Schema below (parameterized queries used everywhere):
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS exercises (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  muscle_group TEXT NOT NULL,
+  difficulty TEXT NOT NULL,
+  description TEXT NOT NULL,
+  image_url TEXT
+);
+
+CREATE TABLE IF NOT EXISTS workouts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS workout_exercises (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  workout_id INTEGER NOT NULL,
+  exercise_id INTEGER NOT NULL,
+  sets INTEGER NOT NULL,
+  repetitions INTEGER NOT NULL,
+  weight REAL NOT NULL DEFAULT 0,
+  FOREIGN KEY (workout_id) REFERENCES workouts (id) ON DELETE CASCADE,
+  FOREIGN KEY (exercise_id) REFERENCES exercises (id)
+);
+
+CREATE TABLE IF NOT EXISTS progress (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  workout_id INTEGER,
+  completed_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+  FOREIGN KEY (workout_id) REFERENCES workouts (id) ON DELETE SET NULL
+);
+
+-- Seed: 28 exercises across Chest, Back, Legs, Shoulders, Arms, Core, Full Body.`},
+{path:"README.md",lang:"markdown",code:`FitTrack - Workout Planner
+==========================
+Full-stack workout planner built with HTML5, CSS3, Vanilla JavaScript,
+Python Flask, SQLite and Jinja2 templates.
+
+Features
+--------
+- User registration and login with hashed passwords and sessions
+- Browse 28 exercises across 7 muscle groups
+- Search exercises by name and description
+- Filter by muscle group: Chest, Back, Legs, Shoulders, Arms, Core, Full Body
+- Filter by difficulty: Beginner, Intermediate, Advanced
+- Exercise detail pages with related exercises
+- Create workouts with sets, repetitions and weight per exercise
+- Edit workouts, delete workouts
+- Track workout completion with timestamps
+- Progress history with total sets, reps and volume
+- Responsive fitness dashboard design
+
+Project Structure
+-----------------
+fittrack/
+    app.py
+    requirements.txt
+    database.db (auto-created on first run)
+    README.md
+    templates/
+        base.html
+        index.html
+        exercises.html
+        exercise.html
+        workouts.html
+        progress.html
+        login.html
+        register.html
+    static/
+        css/style.css
+        js/script.js
+
+Database Tables
+---------------
+- users (id, name, email, password)
+- exercises (id, name, muscle_group, difficulty, description, image_url)
+- workouts (id, user_id, name, created_at)
+- workout_exercises (id, workout_id, exercise_id, sets, repetitions, weight)
+- progress (id, user_id, workout_id, completed_at)
+
+Installation and Run
+--------------------
+1. Requires Python 3.9 or newer.
+
+2. Install dependencies:
+
+    pip install -r requirements.txt
+
+3. Run the application:
+
+    python app.py
+
+4. Open in browser:
+
+    http://127.0.0.1:5000
+
+Security
+--------
+- Passwords hashed with Werkzeug generate_password_hash
+- Authentication via Flask sessions with login_required decorator
+- All SQL uses parameterized queries with placeholders
+- Foreign keys enforced with PRAGMA foreign_keys = ON
+
+JavaScript Features (static/js/script.js)
+-----------------------------------------
+- Workout builder with dynamic exercise rows
+- Dynamic exercise selection from API
+- Form validation for auth and workouts
+- Client-side search and filter
+- Progress volume calculations
+- Modal windows for builder and confirmations
+- Responsive mobile menu
+
+Notes
+-----
+- No medical or body-transformation claims are made.
+- All features are fully functional with real database persistence.
+- Design is a modern professional fitness dashboard.`},
+{path:"templates/base.html",lang:"html",code:`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Dashboard{% endblock %} | FitTrack Workout Planner</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar">
+<div class="nav-inner">
+<a href="{{ url_for('index') }}" class="brand"><span class="brand-icon">FT</span> FitTrack</a>
+<button class="menu-btn" id="menuBtn" type="button">Menu</button>
+<div class="nav-links" id="navLinks">
+<a href="{{ url_for('index') }}">Dashboard</a>
+<a href="{{ url_for('exercises') }}">Exercises</a>
+{% if session.get('user_id') %}
+<a href="{{ url_for('workouts') }}">Workouts</a>
+<a href="{{ url_for('progress') }}">Progress</a>
+<span class="user-pill">Hi, {{ session.get('user_name') }}</span>
+<a href="{{ url_for('logout') }}" class="btn-small">Logout</a>
+{% else %}
+<a href="{{ url_for('login') }}">Login</a>
+<a href="{{ url_for('register') }}" class="btn-small">Register</a>
+{% endif %}
+</div>
+</div>
+</nav>
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-wrap">
+{% for cat, msg in messages %}
+<div class="flash flash-{{ cat }}">{{ msg }}</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+<main class="container">
+{% block content %}{% endblock %}
+</main>
+<footer class="footer">
+<p>FitTrack Workout Planner - Flask + SQLite + Jinja2 - Run with python app.py</p>
+</footer>
+<script src="{{ url_for('static', filename='js/script.js') }}"><\/script>
+</body>
+</html>`},
+{path:"templates/index.html",lang:"html",code:`{% extends "base.html" %}
+{% block title %}{% if user %}Dashboard{% else %}Welcome{% endif %}{% endblock %}
+{% block content %}
+{% if user %}
+<div class="hero card">
+<div class="badge">Live Dashboard</div>
+<h1>Hey {{ user['name'] }}, ready to train?</h1>
+<p class="muted">Here is your training snapshot.</p>
+<div class="hero-actions">
+<a href="{{ url_for('workouts') }}" class="btn-primary">Build Workout</a>
+<a href="{{ url_for('exercises') }}" class="btn-ghost">Browse Exercises</a>
+</div>
+</div>
+<div class="stat-grid">
+<div class="card stat"><span>My Workouts</span><strong>{{ workouts_count }}</strong></div>
+<div class="card stat"><span>Completions</span><strong>{{ completions }}</strong></div>
+<div class="card stat"><span>Total Volume (kg)</span><strong>{{ total_volume }}</strong></div>
+</div>
+<div class="two-col">
+<div class="card pad">
+<h3>Recent Workouts</h3>
+{% if recent %}
+{% for r in recent %}
+<div class="list-row"><div><strong>{{ r['name'] }}</strong><div class="muted small">{{ r['ex_count'] }} exercises - {{ r['created_at'] }}</div></div><a class="btn-small" href="{{ url_for('workouts') }}">Open</a></div>
+{% endfor %}
+{% else %}
+<p class="muted">No workouts yet. Create your first plan.</p>
+{% endif %}
+</div>
+<div class="card pad">
+<h3>Recent Completions</h3>
+{% if recent_progress %}
+{% for p in recent_progress %}
+<div class="list-row"><div><strong>{{ p['name'] or 'Workout' }}</strong><div class="muted small">{{ p['completed_at'] }}</div></div><span class="badge">Done</span></div>
+{% endfor %}
+{% else %}
+<p class="muted">No completions logged yet.</p>
+{% endif %}
+</div>
+</div>
+{% else %}
+<div class="hero card center">
+<div class="badge">Full-Stack Flask + SQLite</div>
+<h1>Plan workouts. Track progress.</h1>
+<p class="muted">28 exercises, 7 muscle groups, custom builder and history.</p>
+<div class="hero-actions center">
+<a href="{{ url_for('register') }}" class="btn-primary">Create Free Account</a>
+<a href="{{ url_for('login') }}" class="btn-ghost">Log In</a>
+</div>
+<div class="tech-row"><span>HTML5</span><span>CSS3</span><span>Vanilla JS</span><span>Flask</span><span>SQLite</span><span>Jinja2</span></div>
+</div>
+<div class="stat-grid">
+<div class="card stat"><span>Exercises</span><strong>28</strong></div>
+<div class="card stat"><span>Muscle Groups</span><strong>7</strong></div>
+<div class="card stat"><span>Tables</span><strong>5</strong></div>
+</div>
+{% endif %}
+{% endblock %}`},
+{path:"templates/exercises.html",lang:"html",code:`{% extends "base.html" %}
+{% block title %}Exercises{% endblock %}
+{% block content %}
+<h1>Exercise Library</h1>
+<p class="muted">Search and filter {{ exercises|length }} exercises.</p>
+<form method="get" action="{{ url_for('exercises') }}" class="filter-bar">
+<input type="text" name="search" id="searchInput" placeholder="Search exercises..." value="{{ search }}">
+<select name="muscle_group" id="muscleFilter">
+<option value="">All muscle groups</option>
+{% for g in groups %}
+<option value="{{ g }}" {% if muscle_group == g %}selected{% endif %}>{{ g }}</option>
+{% endfor %}
+</select>
+<select name="difficulty">
+<option value="">All levels</option>
+<option value="Beginner" {% if difficulty=='Beginner' %}selected{% endif %}>Beginner</option>
+<option value="Intermediate" {% if difficulty=='Intermediate' %}selected{% endif %}>Intermediate</option>
+<option value="Advanced" {% if difficulty=='Advanced' %}selected{% endif %}>Advanced</option>
+</select>
+<button type="submit" class="btn-primary">Search</button>
+</form>
+<div class="chip-row">
+<a class="chip {% if not muscle_group %}active{% endif %}" href="{{ url_for('exercises') }}">All</a>
+{% for g in groups %}
+<a class="chip {% if muscle_group==g %}active{% endif %}" href="{{ url_for('exercises', muscle_group=g) }}">{{ g }}</a>
+{% endfor %}
+</div>
+<div class="ex-grid" id="exerciseGrid">
+{% for ex in exercises %}
+<a class="card ex-card" href="{{ url_for('exercise_detail', exercise_id=ex['id']) }}" data-name="{{ ex['name']|lower }}" data-muscle="{{ ex['muscle_group'] }}">
+{% if ex['image_url'] %}<img src="{{ ex['image_url'] }}" alt="{{ ex['name'] }}">{% endif %}
+<div class="ex-body">
+<div class="ex-tags"><span class="badge">{{ ex['muscle_group'] }}</span><span class="badge level-{{ ex['difficulty'] }}">{{ ex['difficulty'] }}</span></div>
+<h3>{{ ex['name'] }}</h3>
+<p class="muted small">{{ ex['description'][:110] }}...</p>
+<span class="link">View details</span>
+</div>
+</a>
+{% else %}
+<div class="card pad"><p>No exercises found. Try clearing filters.</p></div>
+{% endfor %}
+</div>
+{% endblock %}`},
+{path:"templates/exercise.html",lang:"html",code:`{% extends "base.html" %}
+{% block title %}{{ exercise['name'] }}{% endblock %}
+{% block content %}
+<a href="{{ url_for('exercises') }}" class="link">Back to library</a>
+<div class="card detail-grid">
+{% if exercise['image_url'] %}<img src="{{ exercise['image_url'] }}" alt="{{ exercise['name'] }}" class="detail-img">{% endif %}
+<div class="pad">
+<div class="ex-tags"><span class="badge">{{ exercise['muscle_group'] }}</span><span class="badge level-{{ exercise['difficulty'] }}">{{ exercise['difficulty'] }}</span></div>
+<h1>{{ exercise['name'] }}</h1>
+<p>{{ exercise['description'] }}</p>
+<div class="info-box">
+<strong>How to log it:</strong>
+<p class="muted small">Go to Workouts, create or edit a plan, add this exercise and set your sets, reps and weight. Complete the workout to record it in Progress.</p>
+</div>
+{% if session.get('user_id') %}
+<a href="{{ url_for('workouts') }}" class="btn-primary">Add to a Workout</a>
+{% else %}
+<a href="{{ url_for('login') }}" class="btn-primary">Log in to build workouts</a>
+{% endif %}
+</div>
+</div>
+<h3 class="mt">Related {{ exercise['muscle_group'] }} exercises</h3>
+<div class="ex-grid small">
+{% for r in related %}
+<a class="card ex-card" href="{{ url_for('exercise_detail', exercise_id=r['id']) }}">
+{% if r['image_url'] %}<img src="{{ r['image_url'] }}" alt="{{ r['name'] }}">{% endif %}
+<div class="ex-body"><h3>{{ r['name'] }}</h3><span class="link">View</span></div>
+</a>
+{% endfor %}
+</div>
+{% endblock %}`},
+{path:"templates/workouts.html",lang:"html",code:`{% extends "base.html" %}
+{% block title %}My Workouts{% endblock %}
+{% block content %}
+<div class="page-head">
+<div><h1>My Workouts</h1><p class="muted">Create plans with sets, reps and weight.</p></div>
+<button class="btn-primary" data-open-modal="builderModal" type="button">+ Create Workout</button>
+</div>
+{% if workouts is not none %}
+<div class="work-grid">
+{% for w in workouts %}
+<div class="card pad">
+<div class="work-head"><h3>{{ w['workout']['name'] }}</h3><span class="muted small">{{ w['workout']['created_at'] }}</span></div>
+<p class="muted small">{{ w['items']|length }} exercises - {{ w['volume'] }} kg volume</p>
+<table class="mini-table">
+<tr><th>Exercise</th><th>Sets</th><th>Reps</th><th>Weight</th></tr>
+{% for it in w['items'] %}
+<tr><td>{{ it['name'] }}</td><td>{{ it['sets'] }}</td><td>{{ it['repetitions'] }}</td><td>{{ it['weight'] }} kg</td></tr>
+{% endfor %}
+</table>
+<div class="btn-row">
+<form method="post" action="{{ url_for('complete_workout', workout_id=w['workout']['id']) }}"><button class="btn-primary small" type="submit">Complete</button></form>
+<a class="btn-ghost small" href="{{ url_for('edit_workout', workout_id=w['workout']['id']) }}">Edit</a>
+<form method="post" action="{{ url_for('delete_workout', workout_id=w['workout']['id']) }}" onsubmit="return confirm('Delete this workout?')"><button class="btn-danger small" type="submit">Delete</button></form>
+</div>
+</div>
+{% else %}
+<div class="card pad"><p class="muted">No workouts yet. Click Create Workout to build your first plan.</p></div>
+{% endfor %}
+</div>
+{% endif %}
+{% if edit_workout %}
+<div class="card pad mt">
+<h3>Edit: {{ edit_workout['name'] }}</h3>
+<form method="post" action="{{ url_for('edit_workout', workout_id=edit_workout['id']) }}" data-validate="workout">
+<label>Workout name</label>
+<input type="text" name="name" value="{{ edit_workout['name'] }}" required minlength="3">
+<div id="editRows">
+{% for it in edit_items %}
+<div class="builder-row">
+<select name="exercise_id">
+{% for ex in all_exercises %}
+<option value="{{ ex['id'] }}" {% if ex['id']==it['exercise_id'] %}selected{% endif %}>{{ ex['muscle_group'] }} - {{ ex['name'] }}</option>
+{% endfor %}
+</select>
+<input type="number" name="sets" value="{{ it['sets'] }}" min="1" max="20" required>
+<input type="number" name="repetitions" value="{{ it['repetitions'] }}" min="1" max="200" required>
+<input type="number" name="weight" value="{{ it['weight'] }}" min="0" max="1000" step="0.5" required>
+</div>
+{% endfor %}
+</div>
+<button type="button" class="btn-ghost small" id="addExerciseBtnEdit">+ Add exercise</button>
+<div class="btn-row"><button type="submit" class="btn-primary">Save Changes</button><a href="{{ url_for('workouts') }}" class="btn-ghost">Cancel</a></div>
+</form>
+</div>
+{% endif %}
+<div class="modal" id="builderModal">
+<div class="modal-bg" data-close-modal></div>
+<div class="modal-box">
+<h2>Create Workout</h2>
+<form method="post" action="{{ url_for('create_workout') }}" data-validate="workout">
+<label>Workout name</label>
+<input type="text" name="name" placeholder="e.g. Push Day" required minlength="3">
+<label>Exercises</label>
+<div id="builderRows"></div>
+<button type="button" class="btn-ghost small" id="addExerciseBtn">+ Add exercise</button>
+<div class="calc-line">Total volume: <strong id="volumePreview">0 kg</strong></div>
+<div class="btn-row"><button type="button" class="btn-ghost" data-close-modal>Cancel</button><button type="submit" class="btn-primary">Save Workout</button></div>
+</form>
+</div>
+</div>
+<script>
+window.ALL_EXERCISES = [
+{% for ex in all_exercises %}{id: {{ ex['id'] }}, name: "{{ ex['name'] }}", muscle: "{{ ex['muscle_group'] }}"}{% if not loop.last %},{% endif %}{% endfor %}
+];
+<\/script>
+{% endblock %}`},
+{path:"templates/progress.html",lang:"html",code:`{% extends "base.html" %}
+{% block title %}Progress{% endblock %}
+{% block content %}
+<h1>Progress History</h1>
+<p class="muted">Every completion is recorded with date and volume.</p>
+<div class="stat-grid">
+<div class="card stat"><span>Sessions</span><strong>{{ total_sessions }}</strong></div>
+<div class="card stat"><span>Total Sets</span><strong>{{ total_sets }}</strong></div>
+<div class="card stat"><span>Total Reps</span><strong>{{ total_reps }}</strong></div>
+<div class="card stat"><span>Volume (kg)</span><strong>{{ total_volume }}</strong></div>
+</div>
+<div class="card pad mt">
+<h3>Completion Log</h3>
+<table class="full-table" id="progressTable">
+<tr><th>Date</th><th>Workout</th><th>Exercises</th><th>Sets</th><th>Volume</th></tr>
+{% for h in history %}
+<tr><td>{{ h['row']['completed_at'] }}</td><td>{{ h['row']['wname'] or 'Deleted workout' }}</td><td>{{ h['ex_count'] }}</td><td class="p-sets">{{ h['sets'] }}</td><td class="p-vol">{{ h['volume'] }}</td></tr>
+{% else %}
+<tr><td colspan="5" class="muted">No completions yet. Complete a workout to see it here.</td></tr>
+{% endfor %}
+</table>
+<p class="muted small mt">Calculated totals: <span id="calcSets"></span> sets, <span id="calcVol"></span> kg (computed by JavaScript).</p>
+</div>
+{% endblock %}`},
+{path:"templates/login.html",lang:"html",code:`{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+<div class="card pad auth-card">
+<h1>Welcome back</h1>
+<p class="muted">Log in to access your dashboard.</p>
+<form method="post" action="{{ url_for('login') }}" data-validate="login">
+<label>Email</label>
+<input type="email" name="email" placeholder="you@example.com" required>
+<label>Password</label>
+<input type="password" name="password" placeholder="Your password" required>
+<button type="submit" class="btn-primary full">Log In</button>
+</form>
+<p class="muted small center mt">No account? <a href="{{ url_for('register') }}" class="link">Register here</a></p>
+</div>
+</div>
+{% endblock %}`},
+{path:"templates/register.html",lang:"html",code:`{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+<div class="card pad auth-card">
+<h1>Create account</h1>
+<p class="muted">Start building workouts in seconds.</p>
+<form method="post" action="{{ url_for('register') }}" data-validate="register">
+<label>Full name</label>
+<input type="text" name="name" placeholder="Alex Carter" required minlength="2">
+<label>Email</label>
+<input type="email" name="email" placeholder="you@example.com" required>
+<label>Password (min 6 chars)</label>
+<input type="password" name="password" placeholder="Choose a password" required minlength="6">
+<button type="submit" class="btn-primary full">Create Account</button>
+</form>
+<p class="muted small center mt">Have an account? <a href="{{ url_for('login') }}" class="link">Log in</a></p>
+</div>
+</div>
+{% endblock %}`},
+{path:"static/css/style.css",lang:"css",code:`:root { --lime: #C8FF2E; --bg: #070B09; --card: #111814; --muted: #8AA39A; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: #EAF2ED; font-family: Inter, system-ui, sans-serif; }
+a { color: inherit; text-decoration: none; }
+.container { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+.navbar { background: #0B100D; border-bottom: 1px solid rgba(255,255,255,.08); position: sticky; top: 0; z-index: 50; }
+.nav-inner { max-width: 1100px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 16px; }
+.brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+.brand-icon { background: var(--lime); color: #070B09; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; }
+.nav-links { margin-left: auto; display: flex; align-items: center; gap: 16px; font-weight: 600; font-size: .9rem; }
+.nav-links a:hover { color: var(--lime); }
+.menu-btn { display: none; margin-left: auto; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); color: #fff; border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+.user-pill { background: rgba(200,255,46,.12); color: var(--lime); padding: 6px 12px; border-radius: 999px; font-size: .8rem; }
+.card { background: linear-gradient(145deg,#111814,#0E1411); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; }
+.pad { padding: 22px; }
+.muted { color: var(--muted); } .small { font-size: .82rem; } .center { text-align: center; } .mt { margin-top: 22px; }
+.hero { padding: 34px; margin-bottom: 20px; }
+.hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem; margin: 12px 0 8px; }
+.hero-actions { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.hero-actions.center { justify-content: center; }
+.badge { display: inline-block; font-size: .72rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: rgba(200,255,46,.14); color: var(--lime); border: 1px solid rgba(200,255,46,.3); }
+.btn-primary { background: var(--lime); color: #070B09; font-weight: 700; border: none; border-radius: 12px; padding: 12px 22px; cursor: pointer; display: inline-block; }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-ghost { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: 12px; padding: 12px 22px; cursor: pointer; display: inline-block; font-weight: 600; }
+.btn-small, .small { font-size: .82rem; padding: 8px 14px; }
+.btn-danger { background: rgba(255,80,80,.12); border: 1px solid rgba(255,80,80,.35); color: #FF9A9A; border-radius: 12px; padding: 8px 14px; cursor: pointer; }
+.full { width: 100%; margin-top: 14px; }
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0; }
+.stat-grid .stat { padding: 20px; }
+.stat span { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.stat strong { display: block; font-size: 1.9rem; font-family: 'Space Grotesk', sans-serif; margin-top: 6px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.list-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+.filter-bar { display: grid; grid-template-columns: 1fr 180px 160px 120px; gap: 10px; margin: 18px 0; }
+input, select { background: #0B1210; border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: 12px; padding: 12px 14px; width: 100%; font-size: .9rem; }
+input:focus, select:focus { outline: none; border-color: var(--lime); }
+label { display: block; font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 14px 0 6px; }
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.chip { padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); font-size: .82rem; font-weight: 600; }
+.chip.active { background: var(--lime); color: #070B09; border-color: var(--lime); }
+.ex-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.ex-grid.small { grid-template-columns: repeat(3, 1fr); }
+.ex-card { overflow: hidden; transition: .2s; display: block; }
+.ex-card:hover { transform: translateY(-4px); border-color: rgba(200,255,46,.4); }
+.ex-card img { width: 100%; height: 150px; object-fit: cover; }
+.ex-body { padding: 16px; } .ex-body h3 { margin: 10px 0 6px; font-size: 1rem; }
+.ex-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.level-Beginner { background: rgba(74,222,128,.14); color: #4ADE80; border-color: rgba(74,222,128,.3); }
+.level-Intermediate { background: rgba(251,191,36,.14); color: #FBBF24; border-color: rgba(251,191,36,.3); }
+.level-Advanced { background: rgba(248,113,113,.14); color: #F87171; border-color: rgba(248,113,113,.3); }
+.link { color: var(--lime); font-weight: 700; font-size: .85rem; }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; margin-top: 14px; }
+.detail-img { width: 100%; height: 100%; min-height: 320px; object-fit: cover; }
+.info-box { background: rgba(200,255,46,.07); border: 1px solid rgba(200,255,46,.2); border-radius: 12px; padding: 14px; margin: 16px 0; }
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.work-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.work-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.mini-table, .full-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .85rem; }
+.mini-table th, .full-table th { text-align: left; font-size: .7rem; text-transform: uppercase; color: var(--muted); padding: 8px; border-bottom: 1px solid rgba(255,255,255,.1); }
+.mini-table td, .full-table td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.builder-row { display: grid; grid-template-columns: 1fr 70px 70px 80px 34px; gap: 8px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 10px; margin-bottom: 8px; align-items: center; }
+.calc-line { margin: 12px 0; font-size: .9rem; }
+.modal { display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+.modal.open { display: flex; }
+.modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,.75); }
+.modal-box { position: relative; background: #101612; border: 1px solid rgba(255,255,255,.12); border-radius: 18px; padding: 28px; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; }
+.flash-wrap { max-width: 1100px; margin: 0 auto; padding: 14px 20px 0; }
+.flash { padding: 12px 16px; border-radius: 12px; font-size: .88rem; font-weight: 600; margin-bottom: 8px; }
+.flash-success { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.3); color: #A7F3D0; }
+.flash-danger { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.3); color: #FECACA; }
+.flash-warning { background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.3); color: #FDE68A; }
+.auth-wrap { display: flex; justify-content: center; padding: 30px 0; }
+.auth-card { width: 100%; max-width: 440px; }
+.tech-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.tech-row span { font-size: .75rem; font-weight: 700; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); padding: 6px 12px; border-radius: 999px; }
+.footer { text-align: center; padding: 26px; color: var(--muted); font-size: .82rem; border-top: 1px solid rgba(255,255,255,.07); }
+@media (max-width: 900px) {
+  .ex-grid, .ex-grid.small, .work-grid, .two-col { grid-template-columns: 1fr; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .filter-bar { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; position: absolute; top: 64px; left: 12px; right: 12px; background: #101612; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 14px; flex-direction: column; align-items: stretch; }
+  .nav-links.open { display: flex; }
+  .menu-btn { display: block; }
+  .builder-row { grid-template-columns: 1fr 1fr; }
+}`},
+{path:"static/js/script.js",lang:"javascript",code:`document.addEventListener('DOMContentLoaded', function() {
+  var menuBtn = document.getElementById('menuBtn');
+  var navLinks = document.getElementById('navLinks');
+  if (menuBtn && navLinks) {
+    menuBtn.addEventListener('click', function() {
+      if (navLinks.classList.contains('open')) { navLinks.classList.remove('open'); }
+      else { navLinks.classList.add('open'); }
+    });
+  }
+  var openBtns = document.querySelectorAll('[data-open-modal]');
+  for (var i = 0; i < openBtns.length; i++) {
+    openBtns[i].addEventListener('click', function() {
+      var id = this.getAttribute('data-open-modal');
+      var m = document.getElementById(id);
+      if (m) { m.classList.add('open'); }
+      if (id === 'builderModal') { ensureBuilderRow(); }
+    });
+  }
+  var closeBtns = document.querySelectorAll('[data-close-modal]');
+  for (var j = 0; j < closeBtns.length; j++) {
+    closeBtns[j].addEventListener('click', function() {
+      var modals = document.querySelectorAll('.modal.open');
+      for (var k = 0; k < modals.length; k++) { modals[k].classList.remove('open'); }
+    });
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      var modals = document.querySelectorAll('.modal.open');
+      for (var k = 0; k < modals.length; k++) { modals[k].classList.remove('open'); }
+    }
+  });
+  var addBtn = document.getElementById('addExerciseBtn');
+  if (addBtn) { addBtn.addEventListener('click', function() { addBuilderRow('builderRows'); }); }
+  var addBtnEdit = document.getElementById('addExerciseBtnEdit');
+  if (addBtnEdit) { addBtnEdit.addEventListener('click', function() { addBuilderRow('editRows'); }); }
+  var searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      var term = this.value.toLowerCase();
+      var cards = document.querySelectorAll('#exerciseGrid .ex-card');
+      for (var c = 0; c < cards.length; c++) {
+        var nm = cards[c].getAttribute('data-name') || '';
+        if (nm.indexOf(term) > -1 || term === '') { cards[c].style.display = ''; }
+        else { cards[c].style.display = 'none'; }
+      }
+    });
+  }
+  var muscleFilter = document.getElementById('muscleFilter');
+  if (muscleFilter) {
+    muscleFilter.addEventListener('change', function() {
+      var val = this.value;
+      var cards = document.querySelectorAll('#exerciseGrid .ex-card');
+      for (var c = 0; c < cards.length; c++) {
+        var mus = cards[c].getAttribute('data-muscle') || '';
+        if (val === '' || mus === val) { cards[c].style.display = ''; }
+        else { cards[c].style.display = 'none'; }
+      }
+    });
+  }
+  var forms = document.querySelectorAll('form[data-validate]');
+  for (var f = 0; f < forms.length; f++) {
+    forms[f].addEventListener('submit', function(e) {
+      var kind = this.getAttribute('data-validate');
+      if (kind === 'register' || kind === 'login') {
+        var emailEl = this.querySelector('input[name="email"]');
+        var passEl = this.querySelector('input[name="password"]');
+        var email = emailEl ? emailEl.value : '';
+        var pass = passEl ? passEl.value : '';
+        if (email.indexOf('@') < 1 || email.indexOf('.') < 0) {
+          e.preventDefault(); alert('Please enter a valid email address.'); return false;
+        }
+        if (pass.length < 6) {
+          e.preventDefault(); alert('Password must be at least 6 characters.'); return false;
+        }
+        if (kind === 'register') {
+          var nameEl = this.querySelector('input[name="name"]');
+          var nm = nameEl ? nameEl.value.trim() : '';
+          if (nm.length < 2) { e.preventDefault(); alert('Name must be at least 2 characters.'); return false; }
+        }
+      }
+      if (kind === 'workout') {
+        var nameInput = this.querySelector('input[name="name"]');
+        var wname = nameInput ? nameInput.value.trim() : '';
+        if (wname.length < 3) { e.preventDefault(); alert('Workout name must be at least 3 characters.'); return false; }
+        var rows = this.querySelectorAll('.builder-row');
+        if (rows.length === 0) { e.preventDefault(); alert('Add at least one exercise.'); return false; }
+        for (var r = 0; r < rows.length; r++) {
+          var s = rows[r].querySelector('input[name="sets"]');
+          var rp = rows[r].querySelector('input[name="repetitions"]');
+          var wt = rows[r].querySelector('input[name="weight"]');
+          var sv = s ? parseInt(s.value, 10) : 0;
+          var rv = rp ? parseInt(rp.value, 10) : 0;
+          var wv = wt ? parseFloat(wt.value) : -1;
+          if (!(sv >= 1 && sv <= 20)) { e.preventDefault(); alert('Sets must be between 1 and 20.'); return false; }
+          if (!(rv >= 1 && rv <= 200)) { e.preventDefault(); alert('Reps must be between 1 and 200.'); return false; }
+          if (!(wv >= 0 && wv <= 1000)) { e.preventDefault(); alert('Weight must be between 0 and 1000.'); return false; }
+        }
+      }
+    });
+  }
+  computeProgressTotals();
+  updateVolumePreview();
+  document.addEventListener('input', function(e) {
+    if (e.target && (e.target.getAttribute('name') === 'sets' || e.target.getAttribute('name') === 'repetitions' || e.target.getAttribute('name') === 'weight')) {
+      updateVolumePreview();
+    }
+  });
+});
+
+function ensureBuilderRow() {
+  var wrap = document.getElementById('builderRows');
+  if (wrap && wrap.children.length === 0) { addBuilderRow('builderRows'); }
+}
+
+function exerciseOptions(selected) {
+  var list = window.ALL_EXERCISES || [];
+  var html = '';
+  for (var i = 0; i < list.length; i++) {
+    var sel = (selected && parseInt(selected, 10) === list[i].id) ? ' selected' : '';
+    html = html + '<option value="' + list[i].id + '"' + sel + '>' + list[i].muscle + ' - ' + list[i].name + '</option>';
+  }
+  if (html === '') { html = '<option value="">No exercises</option>'; }
+  return html;
+}
+
+function addBuilderRow(wrapId) {
+  var wrap = document.getElementById(wrapId);
+  if (!wrap) { return; }
+  var row = document.createElement('div');
+  row.className = 'builder-row';
+  row.innerHTML = '<select name="exercise_id">' + exerciseOptions() + '</select>' +
+    '<input type="number" name="sets" value="3" min="1" max="20" title="Sets">' +
+    '<input type="number" name="repetitions" value="10" min="1" max="200" title="Reps">' +
+    '<input type="number" name="weight" value="20" min="0" max="1000" step="0.5" title="Weight kg">' +
+    '<button type="button" class="btn-danger" onclick="this.parentElement.remove();updateVolumePreview();">X</button>';
+  wrap.appendChild(row);
+  updateVolumePreview();
+}
+
+function updateVolumePreview() {
+  var preview = document.getElementById('volumePreview');
+  if (!preview) { return; }
+  var total = 0;
+  var rows = document.querySelectorAll('#builderRows .builder-row');
+  for (var i = 0; i < rows.length; i++) {
+    var s = rows[i].querySelector('input[name="sets"]');
+    var r = rows[i].querySelector('input[name="repetitions"]');
+    var w = rows[i].querySelector('input[name="weight"]');
+    var sv = s ? parseFloat(s.value) || 0 : 0;
+    var rv = r ? parseFloat(r.value) || 0 : 0;
+    var wv = w ? parseFloat(w.value) || 0 : 0;
+    total = total + (sv * rv * wv);
+  }
+  preview.textContent = Math.round(total * 10) / 10 + ' kg';
+}
+
+function computeProgressTotals() {
+  var setEls = document.querySelectorAll('#progressTable .p-sets');
+  var volEls = document.querySelectorAll('#progressTable .p-vol');
+  var ts = 0; var tv = 0;
+  for (var i = 0; i < setEls.length; i++) { ts = ts + (parseFloat(setEls[i].textContent) || 0); }
+  for (var j = 0; j < volEls.length; j++) { tv = tv + (parseFloat(volEls[j].textContent) || 0); }
+  var cs = document.getElementById('calcSets');
+  var cv = document.getElementById('calcVol');
+  if (cs) { cs.textContent = ts; }
+  if (cv) { cv.textContent = Math.round(tv * 10) / 10; }
+}`}
+];
+
+/* ================= STORAGE + STATE ================= */
+const K={users:'ft_users_v2',workouts:'ft_workouts_v2',progress:'ft_progress_v2',session:'ft_session_v2'};
+const load=(k,f)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}};
+const save=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const exById=id=>EXERCISES.find(e=>e.id===Number(id));
+let currentFilter='All', editingId=null, confirmCb=null, chWeekly=null, chMuscle=null, chVolume=null, currentFile='app.py';
+
+async function hashPassword(pw){
+  try{if(crypto&&crypto.subtle){const enc=new TextEncoder().encode('fittrack$'+pw);const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}}catch(e){}
+  let h1=0xdeadbeef,h2=0x41c6ce57;const s='fittrack$'+pw;
+  for(let i=0;i<s.length;i++){const ch=s.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (4294967296*(2097151&h2)+(h1>>>0)).toString(16);
+}
+const validEmail=e=>e.indexOf('@')>0&&e.indexOf('.')>e.indexOf('@')+1&&e.length>=5;
+
+async function initDemo(){
+  let users=load(K.users,null);
+  if(users) return;
+  const h=await hashPassword('demo1234');
+  const demoId='demo001';
+  save(K.users,[{id:demoId,name:'Demo Athlete',email:'demo@fittrack.io',passHash:h}]);
+  const now=Date.now(),D=86400000;
+  const w1={id:'w1',user_id:demoId,name:'Push Day Strength',created_at:new Date(now-6*D).toISOString(),items:[{exercise_id:1,sets:4,reps:8,weight:60},{exercise_id:3,sets:3,reps:10,weight:22},{exercise_id:13,sets:3,reps:8,weight:40},{exercise_id:20,sets:3,reps:12,weight:15}]};
+  const w2={id:'w2',user_id:demoId,name:'Legs + Core',created_at:new Date(now-3*D).toISOString(),items:[{exercise_id:9,sets:4,reps:8,weight:80},{exercise_id:10,sets:3,reps:10,weight:50},{exercise_id:11,sets:3,reps:12,weight:10},{exercise_id:21,sets:3,reps:1,weight:0}]};
+  save(K.workouts,[w1,w2]);
+  const mk=(wid,wname,ts)=>{const w=wid==='w1'?w1:w2;let s=0,r=0,v=0;w.items.forEach(it=>{s+=it.sets;r+=it.sets*it.reps;v+=it.sets*it.reps*it.weight});return{id:uid()+ts,user_id:demoId,workout_id:wid,workout_name:wname,completed_at:new Date(ts).toISOString(),items_snapshot:JSON.parse(JSON.stringify(w.items)),totalSets:s,totalReps:r,totalVolume:Math.round(v*10)/10};};
+  save(K.progress,[mk('w1','Push Day Strength',now-5*D),mk('w2','Legs + Core',now-2*D),mk('w1','Push Day Strength',now-1*D)]);
+}
+const getUser=()=>{const sid=load(K.session,null);if(!sid)return null;return load(K.users,[]).find(u=>u.id===sid)||null;};
+const myWorkouts=()=>{const u=getUser();return load(K.workouts,[]).filter(w=>u&&w.user_id===u.id).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));};
+const myProgress=()=>{const u=getUser();return load(K.progress,[]).filter(p=>u&&p.user_id===u.id).sort((a,b)=>new Date(b.completed_at)-new Date(a.completed_at));};
+function workoutStats(w){let s=0,r=0,v=0;(w.items||[]).forEach(it=>{s+=+it.sets;r+=(+it.sets)*(+it.reps);v+=(+it.sets)*(+it.reps)*(+it.weight||0)});return{sets:s,reps:r,volume:Math.round(v*10)/10};}
+function calcStreak(){const days=new Set(myProgress().map(p=>new Date(p.completed_at).toDateString()));let s=0;const d=new Date();if(!days.has(d.toDateString()))d.setDate(d.getDate()-1);while(days.has(d.toDateString())){s++;d.setDate(d.getDate()-1);}return s;}
+
+/* ================= UI HELPERS ================= */
+function toast(msg,type='success'){const w=document.getElementById('toastWrap');const t=document.createElement('div');t.className='toast '+type;const ic=type==='success'?'✅':type==='error'?'⛔':'ℹ️';t.innerHTML=`<span>${ic}</span><span>${msg}</span>`;w.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='.3s';setTimeout(()=>t.remove(),300)},3200);}
+function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open'));});
+function askConfirm(title,msg,icon,cb){document.getElementById('confirmTitle').textContent=title;document.getElementById('confirmMsg').textContent=msg;document.getElementById('confirmIcon').textContent=icon;confirmCb=cb;openModal('confirmModal');}
+document.getElementById('confirmYes').addEventListener('click',()=>{closeModal('confirmModal');if(confirmCb)confirmCb();});
+function toggleSidebar(open){const s=document.getElementById('sidebar'),o=document.getElementById('sidebarOverlay');if(open){s.classList.add('open');o.classList.remove('hidden')}else{s.classList.remove('open');o.classList.add('hidden')}}
+function setPage(p){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.navlink').forEach(n=>n.classList.toggle('active',n.dataset.page===p));document.querySelectorAll('.mnav').forEach(n=>n.style.color=n.dataset.m===p?'#C8FF2E':'');const T={dashboard:['Dashboard','Overview of your training'],exercises:['Exercises','28 movements across 7 muscle groups'],workouts:['My Workouts','Build, edit & complete plans'],progress:['Progress','Completion history & volume'],codebase:['Flask Source Code','Complete full-stack project']};document.getElementById('pageTitle').textContent=T[p][0];document.getElementById('pageSub').textContent=T[p][1];toggleSidebar(false);window.scrollTo({top:0,behavior:'smooth'});if(p==='dashboard')renderDashboard();if(p==='exercises')renderExercises();if(p==='workouts')renderWorkouts();if(p==='progress')renderProgress();if(p==='codebase')renderCodebase();}
+function switchAuth(w){const L=w==='login';document.getElementById('loginForm').classList.toggle('hidden',!L);document.getElementById('registerForm').classList.toggle('hidden',L);document.getElementById('tabLogin').classList.toggle('active',L);document.getElementById('tabRegister').classList.toggle('active',!L);}
+
+/* ================= AUTH ================= */
+async function doRegister(e){e.preventDefault();const n=document.getElementById('regName').value.trim(),em=document.getElementById('regEmail').value.trim().toLowerCase(),pw=document.getElementById('regPass').value;let ok=true;document.getElementById('regNameErr').classList.toggle('show',n.length<2);if(n.length<2)ok=false;document.getElementById('regEmailErr').classList.toggle('show',!validEmail(em));if(!validEmail(em))ok=false;document.getElementById('regPassErr').classList.toggle('show',pw.length<6);if(pw.length<6)ok=false;if(!ok)return false;const users=load(K.users,[]);if(users.find(u=>u.email===em)){toast('Email already registered. Please log in.','error');switchAuth('login');return false;}const h=await hashPassword(pw);const nu={id:uid(),name:n,email:em,passHash:h};users.push(nu);save(K.users,users);save(K.session,nu.id);enterApp();toast(`Welcome, ${n.split(' ')[0]}! Account created.`);return false;}
+async function doLogin(e){e.preventDefault();const em=document.getElementById('loginEmail').value.trim().toLowerCase(),pw=document.getElementById('loginPass').value;let ok=true;document.getElementById('loginEmailErr').classList.toggle('show',!validEmail(em));if(!validEmail(em))ok=false;document.getElementById('loginPassErr').classList.toggle('show',pw.length<6);if(pw.length<6)ok=false;if(!ok)return false;const h=await hashPassword(pw);const u=load(K.users,[]).find(x=>x.email===em&&x.passHash===h);if(!u){toast('Invalid email or password.','error');return false;}save(K.session,u.id);enterApp();toast(`Welcome back, ${u.name.split(' ')[0]}!`);return false;}
+async function demoLogin(){const h=await hashPassword('demo1234');const users=load(K.users,[]);let d=users.find(u=>u.email==='demo@fittrack.io');if(!d){d={id:'demo001',name:'Demo Athlete',email:'demo@fittrack.io',passHash:h};users.push(d);save(K.users,users);}else if(d.passHash!==h){d.passHash=h;save(K.users,users);}save(K.session,d.id);enterApp();toast('Logged in with demo account.');}
+function doLogout(){localStorage.removeItem(K.session);document.getElementById('appView').classList.add('hidden');document.getElementById('appView').classList.remove('lg:flex');document.getElementById('authView').classList.remove('hidden');toast('Logged out securely.','info');}
+function enterApp(){const u=getUser();if(!u)return;document.getElementById('authView').classList.add('hidden');const av=document.getElementById('appView');av.classList.remove('hidden');av.classList.add('lg:flex');document.getElementById('userName').textContent=u.name;document.getElementById('userEmail').textContent=u.email;document.getElementById('userAvatar').textContent=u.name.charAt(0).toUpperCase();document.getElementById('dashName').textContent=u.name.split(' ')[0];buildMuscleChips();setPage('dashboard');}
+
+/* ================= DASHBOARD ================= */
+function renderDashboard(){
+  const w=myWorkouts(),p=myProgress();
+  document.getElementById('statWorkouts').textContent=w.length;
+  document.getElementById('statCompletions').textContent=p.length;
+  const vol=p.reduce((a,x)=>a+x.totalVolume,0);
+  document.getElementById('statVolume').textContent=Math.round(vol).toLocaleString()+' kg';
+  const st=calcStreak();document.getElementById('statStreak').textContent=st;document.getElementById('streakBadge').textContent=st+' day streak';
+  document.getElementById('navWCount').textContent=w.length;
+  const rw=document.getElementById('recentWorkouts');
+  rw.innerHTML=w.length?w.slice(0,3).map(x=>{const s=workoutStats(x);return `<div class="glass rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:border-lime-400/40" onclick="viewWorkout('${x.id}')"><div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold" style="background:rgba(200,255,46,.15);color:#C8FF2E">💪</div><div class="flex-1 min-w-0"><div class="font-bold text-sm truncate">${x.name}</div><div class="text-xs text-muted">${x.items.length} exercises • ${s.sets} sets • ${s.volume} kg</div></div><span style="color:#C8FF2E">→</span></div>`}).join(''):`<div class="text-sm text-muted glass rounded-xl p-5 text-center">No workouts yet.<br><button onclick="openBuilder()" class="btn-lime px-4 py-2 text-xs mt-3">+ Create your first</button></div>`;
+  const rp=document.getElementById('recentProgress');
+  rp.innerHTML=p.length?p.slice(0,3).map(x=>`<div class="glass rounded-xl p-4 flex items-center gap-3"><div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(74,222,128,.15)">✅</div><div class="flex-1 min-w-0"><div class="font-bold text-sm truncate">${x.workout_name}</div><div class="text-xs text-muted">${new Date(x.completed_at).toLocaleString()} • ${x.totalSets} sets • ${x.totalVolume} kg</div></div></div>`).join(''):`<div class="text-sm text-muted glass rounded-xl p-5 text-center">Complete a workout to start your history.</div>`;
+  // Weekly chart
+  const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d;});
+  const labels=days.map(d=>d.toLocaleDateString('en',{weekday:'short'}));
+  const counts=days.map(d=>p.filter(x=>new Date(x.completed_at).toDateString()===d.toDateString()).length);
+  if(chWeekly)chWeekly.destroy();
+  chWeekly=new Chart(document.getElementById('chartWeekly'),{type:'bar',data:{labels,datasets:[{data:counts,backgroundColor:'rgba(200,255,46,.75)',borderRadius:8,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,color:'#8AA39A'},grid:{color:'rgba(255,255,255,.06)'}},x:{ticks:{color:'#8AA39A'},grid:{display:false}}},maintainAspectRatio:false}});
+  // Muscle doughnut
+  const mCount={};p.forEach(pr=>(pr.items_snapshot||[]).forEach(it=>{const ex=exById(it.exercise_id);if(ex)mCount[ex.muscle_group]=(mCount[ex.muscle_group]||0)+(+it.sets);}));
+  const mk=Object.keys(mCount).length?Object.keys(mCount):MUSCLES;const mv=Object.keys(mCount).length?Object.values(mCount):MUSCLES.map(()=>1);
+  if(chMuscle)chMuscle.destroy();
+  chMuscle=new Chart(document.getElementById('chartMuscle'),{type:'doughnut',data:{labels:mk,datasets:[{data:mv,backgroundColor:['#C8FF2E','#2DD4BF','#FBBF24','#F87171','#A78BFA','#60A5FA','#F472B6'],borderColor:'#111814',borderWidth:3}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#8AA39A',boxWidth:12,font:{size:11}}}},maintainAspectRatio:false,cutout:'62%'}});
+}
+
+/* ================= EXERCISES ================= */
+function buildMuscleChips(){const wrap=document.getElementById('muscleChips');wrap.innerHTML=`<div class="chip active" data-m="All" onclick="setMuscle('All')">All (${EXERCISES.length})</div>`+MUSCLES.map(m=>{const c=EXERCISES.filter(e=>e.muscle_group===m).length;return `<div class="chip" data-m="${m}" onclick="setMuscle('${m}')">${m} (${c})</div>`}).join('');}
+function setMuscle(m){currentFilter=m;document.querySelectorAll('#muscleChips .chip').forEach(c=>c.classList.toggle('active',c.dataset.m===m));renderExercises();}
+function renderExercises(){
+  const q=(document.getElementById('exSearch').value||'').toLowerCase(),d=document.getElementById('exDiff').value;
+  const list=EXERCISES.filter(e=>(currentFilter==='All'||e.muscle_group===currentFilter)&&(!d||e.difficulty===d)&&(!q||e.name.toLowerCase().includes(q)||e.description.toLowerCase().includes(q)));
+  document.getElementById('exCount').textContent=`${list.length} exercise${list.length!==1?'s':''}${currentFilter!=='All'?' in '+currentFilter:''}`;
+  document.getElementById('exerciseGrid').innerHTML=list.length?list.map(e=>`
+    <div class="card card-hover overflow-hidden cursor-pointer" onclick="openExercise(${e.id})">
+      <div class="relative"><img src="${e.image_url}" class="ex-img" loading="lazy" alt="${e.name}"><div class="absolute top-3 left-3 flex gap-1.5"><span class="badge badge-lime" style="background:rgba(7,11,9,.8)">${e.muscle_group}</span></div></div>
+      <div class="p-4"><div class="flex items-center justify-between"><span class="badge badge-diff-${e.difficulty}">${e.difficulty}</span><span class="text-xs" style="color:#C8FF2E">Details →</span></div>
+      <h3 class="font-grotesk font-bold mt-2">${e.name}</h3><p class="text-xs text-muted mt-1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${e.description}</p></div>
+    </div>`).join(''):`<div class="col-span-full card p-10 text-center text-muted">No exercises match your search.<br><button onclick="clearExFilters()" class="btn-ghost px-4 py-2 text-sm mt-3">Clear filters</button></div>`;
+}
+function clearExFilters(){document.getElementById('exSearch').value='';document.getElementById('exDiff').value='';setMuscle('All');}
+function openExercise(id){const e=exById(id);if(!e)return;const rel=EXERCISES.filter(x=>x.muscle_group===e.muscle_group&&x.id!==e.id).slice(0,3);
+  document.getElementById('exModalBody').innerHTML=`<div class="relative"><img src="${e.image_url}" class="w-full h-60 object-cover" style="border-radius:20px 20px 0 0" alt="${e.name}"><button onclick="closeModal('exerciseModal')" class="btn-ghost absolute top-4 right-4 px-3 py-1.5 text-sm">✕</button><div class="absolute bottom-4 left-5 flex gap-2"><span class="badge badge-lime">${e.muscle_group}</span><span class="badge badge-diff-${e.difficulty}">${e.difficulty}</span></div></div>
+  <div class="p-6"><h3 class="font-grotesk font-bold text-2xl">${e.name}</h3><p class="text-sm text-muted mt-2 leading-relaxed">${e.description}</p>
+  <div class="text-xs font-bold uppercase tracking-wider text-muted mt-5 mb-2">How to perform</div>
+  <div class="space-y-2">${e.instructions.map((s,i)=>`<div class="glass rounded-xl p-3 text-sm flex gap-3"><span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style="background:#C8FF2E;color:#070B09">${i+1}</span>${s}</div>`).join('')}</div>
+  <div class="text-xs font-bold uppercase tracking-wider text-muted mt-5 mb-2">Related ${e.muscle_group}</div>
+  <div class="grid grid-cols-3 gap-2">${rel.map(r=>`<div class="glass rounded-xl overflow-hidden cursor-pointer" onclick="openExercise(${r.id})"><img src="${r.image_url}" class="h-16 w-full object-cover"><div class="p-2 text-[11px] font-bold truncate">${r.name}</div></div>`).join('')}</div>
+  <button onclick="closeModal('exerciseModal');openBuilderWith(${e.id})" class="btn-lime w-full py-3 mt-5">+ Add to New Workout</button></div>`;
+  openModal('exerciseModal');}
+
+/* ================= WORKOUTS ================= */
+function renderWorkouts(){
+  const w=myWorkouts();document.getElementById('navWCount').textContent=w.length;
+  const el=document.getElementById('workoutList');
+  el.innerHTML=w.length?w.map(x=>{const s=workoutStats(x);const muscles=[...new Set(x.items.map(it=>{const e=exById(it.exercise_id);return e?e.muscle_group:'';}).filter(Boolean))];
+    return `<div class="card card-hover p-5">
+    <div class="flex items-start justify-between gap-2"><div><h3 class="font-grotesk font-bold text-lg">${x.name}</h3><div class="text-xs text-muted">${new Date(x.created_at).toLocaleDateString()} • ${x.items.length} exercises</div></div><span class="badge badge-lime">${s.volume} kg</span></div>
+    <div class="flex flex-wrap gap-1.5 mt-3">${muscles.map(m=>`<span class="badge badge-muted">${m}</span>`).join('')}</div>
+    <div class="mt-3 space-y-1.5 max-h-36 overflow-y-auto">${x.items.slice(0,5).map(it=>{const e=exById(it.exercise_id);return `<div class="flex items-center gap-2 text-sm glass rounded-lg px-3 py-2"><span class="font-semibold flex-1 truncate">${e?e.name:'Exercise'}</span><span class="mono text-xs text-muted">${it.sets}×${it.reps} • ${it.weight}kg</span></div>`}).join('')}${x.items.length>5?`<div class="text-xs text-muted">+${x.items.length-5} more...</div>`:''}</div>
+    <div class="progress-bar mt-4"><div class="progress-fill" style="width:${Math.min(100,x.items.length*14)}%"></div></div>
+    <div class="grid grid-cols-4 gap-2 mt-4">
+      <button onclick="viewWorkout('${x.id}')" class="btn-ghost py-2 text-xs font-bold">👁 View</button>
+      <button onclick="completeWorkout('${x.id}')" class="btn-lime py-2 text-xs">✓ Done</button>
+      <button onclick="openBuilder('${x.id}')" class="btn-ghost py-2 text-xs font-bold">✎ Edit</button>
+      <button onclick="deleteWorkout('${x.id}')" class="btn-danger py-2 text-xs font-bold">🗑</button>
+    </div></div>`}).join('')
+  :`<div class="col-span-full card p-12 text-center"><div class="text-5xl mb-4">📝</div><h3 class="font-grotesk font-bold text-xl">No workouts yet</h3><p class="text-sm text-muted mt-2">Build your first plan with sets, reps and weight.</p><button onclick="openBuilder()" class="btn-lime px-6 py-3 text-sm mt-5">+ Create Workout</button></div>`;
+}
+function exOptions(sel){return MUSCLES.map(m=>`<optgroup label="${m}">${EXERCISES.filter(e=>e.muscle_group===m).map(e=>`<option value="${e.id}" ${Number(sel)===e.id?'selected':''}>${e.name}</option>`).join('')}</optgroup>`).join('');}
+function openBuilder(editId=null){editingId=editId;document.getElementById('builderTitle').textContent=editId?'Edit Workout':'Create Workout';document.getElementById('builderRows').innerHTML='';document.getElementById('builderNameErr').classList.remove('show');document.getElementById('builderRowsErr').classList.remove('show');
+  if(editId){const w=myWorkouts().find(x=>x.id===editId);if(!w)return;document.getElementById('builderName').value=w.name;w.items.forEach(it=>addBuilderRow(it));}
+  else{document.getElementById('builderName').value='';addBuilderRow();}
+  updateBuilderSummary();openModal('builderModal');}
+function openBuilderWith(exId){openBuilder();const rows=document.getElementById('builderRows');if(rows.firstChild){rows.firstChild.querySelector('select').value=exId;}updateBuilderSummary();}
+function addBuilderRow(data={}){const wrap=document.getElementById('builderRows');const row=document.createElement('div');row.className='builder-row';
+  row.innerHTML=`<select class="inp b-ex" onchange="updateBuilderSummary()">${exOptions(data.exercise_id||1)}</select>
+  <div class="grid grid-cols-3 gap-2 mt-2">
+    <div><label class="text-[10px] text-muted font-bold">SETS</label><input type="number" class="inp b-sets" value="${data.sets||3}" min="1" max="20" oninput="updateBuilderSummary()"></div>
+    <div><label class="text-[10px] text-muted font-bold">REPS</label><input type="number" class="inp b-reps" value="${data.reps||10}" min="1" max="200" oninput="updateBuilderSummary()"></div>
+    <div><label class="text-[10px] text-muted font-bold">KG</label><input type="number" class="inp b-weight" value="${data.weight??20}" min="0" max="1000" step="0.5" oninput="updateBuilderSummary()"></div>
+  </div>
+  <button onclick="this.parentElement.remove();updateBuilderSummary()" class="btn-danger w-full py-1.5 text-xs mt-2 font-bold">Remove exercise</button>`;
+  wrap.appendChild(row);updateBuilderSummary();}
+function builderData(){const rows=[...document.getElementById('builderRows').children];return rows.map(r=>({exercise_id:+r.querySelector('.b-ex').value,sets:+r.querySelector('.b-sets').value,reps:+r.querySelector('.b-reps').value,weight:+r.querySelector('.b-weight').value})).filter(x=>x.sets>=1&&x.sets<=20&&x.reps>=1&&x.reps<=200&&x.weight>=0&&x.weight<=1000);}
+function updateBuilderSummary(){const d=builderData();document.getElementById('bSumEx').textContent=d.length;document.getElementById('bSumSets').textContent=d.reduce((a,x)=>a+x.sets,0);document.getElementById('bSumVol').textContent=Math.round(d.reduce((a,x)=>a+x.sets*x.reps*x.weight,0)*10)/10+' kg';}
+function saveWorkout(){const name=document.getElementById('builderName').value.trim();const items=builderData();let ok=true;
+  document.getElementById('builderNameErr').classList.toggle('show',name.length<3);if(name.length<3)ok=false;
+  const rawCount=document.getElementById('builderRows').children.length;
+  document.getElementById('builderRowsErr').classList.toggle('show',items.length===0||items.length!==rawCount);if(items.length===0||items.length!==rawCount){if(items.length!==rawCount)toast('Check sets (1-20), reps (1-200), weight (0-1000).','error');ok=false;}
+  if(!ok)return;const u=getUser();let all=load(K.workouts,[]);
+  if(editingId){const i=all.findIndex(x=>x.id===editingId&&x.user_id===u.id);if(i>-1){all[i].name=name;all[i].items=items;save(K.workouts,all);toast('Workout updated.');}}
+  else{all.push({id:uid(),user_id:u.id,name,created_at:new Date().toISOString(),items});save(K.workouts,all);toast(`"${name}" created with ${items.length} exercises.`);}
+  closeModal('builderModal');renderWorkouts();renderDashboard();}
+function viewWorkout(id){const w=myWorkouts().find(x=>x.id===id);if(!w)return;const s=workoutStats(w);
+  document.getElementById('workoutViewBody').innerHTML=`<div class="flex items-start justify-between"><div><h3 class="font-grotesk font-bold text-2xl">${w.name}</h3><div class="text-xs text-muted mt-1">Created ${new Date(w.created_at).toLocaleString()} • ${s.sets} sets • ${s.reps} reps • <b style="color:#C8FF2E">${s.volume} kg</b></div></div><button onclick="closeModal('workoutViewModal')" class="btn-ghost px-3 py-1.5">✕</button></div>
+  <div class="mt-4 space-y-2 max-h-[46vh] overflow-y-auto">${w.items.map(it=>{const e=exById(it.exercise_id);if(!e)return'';return `<div class="glass rounded-xl p-3 flex items-center gap-3"><img src="${e.image_url}" class="w-14 h-14 rounded-xl object-cover"><div class="flex-1 min-w-0"><div class="font-bold text-sm truncate">${e.name}</div><div class="text-xs text-muted">${e.muscle_group} • ${e.difficulty}</div></div><div class="text-right"><div class="mono font-bold text-sm">${it.sets}×${it.reps}</div><div class="text-xs" style="color:#C8FF2E">${it.weight} kg</div></div></div>`}).join('')}</div>
+  <div class="grid grid-cols-3 gap-2 mt-5"><button onclick="closeModal('workoutViewModal');completeWorkout('${w.id}')" class="btn-lime py-2.5 text-sm">✓ Complete</button><button onclick="closeModal('workoutViewModal');openBuilder('${w.id}')" class="btn-ghost py-2.5 text-sm font-semibold">✎ Edit</button><button onclick="closeModal('workoutViewModal');deleteWorkout('${w.id}')" class="btn-danger py-2.5 text-sm font-semibold">Delete</button></div>`;
+  openModal('workoutViewModal');}
+function completeWorkout(id){const w=myWorkouts().find(x=>x.id===id);if(!w)return;askConfirm('Log as complete?',`"${w.name}" will be added to your progress history with today's date.`,'✅',()=>{const u=getUser();const s=workoutStats(w);const all=load(K.progress,[]);all.push({id:uid(),user_id:u.id,workout_id:w.id,workout_name:w.name,completed_at:new Date().toISOString(),items_snapshot:JSON.parse(JSON.stringify(w.items)),totalSets:s.sets,totalReps:s.reps,totalVolume:s.volume});save(K.progress,all);toast(`"${w.name}" logged. Streak: ${calcStreak()} day(s).`);renderWorkouts();renderDashboard();});}
+function deleteWorkout(id){const w=myWorkouts().find(x=>x.id===id);if(!w)return;askConfirm('Delete workout?',`"${w.name}" will be removed. Past completions stay in history.`,'🗑️',()=>{save(K.workouts,load(K.workouts,[]).filter(x=>x.id!==id));toast('Workout deleted.','info');renderWorkouts();renderDashboard();});}
+
+/* ================= PROGRESS ================= */
+function renderProgress(){
+  const p=myProgress();
+  document.getElementById('pSessions').textContent=p.length;
+  document.getElementById('pSets').textContent=p.reduce((a,x)=>a+x.totalSets,0);
+  document.getElementById('pReps').textContent=p.reduce((a,x)=>a+x.totalReps,0).toLocaleString();
+  document.getElementById('pVolume').textContent=Math.round(p.reduce((a,x)=>a+x.totalVolume,0)).toLocaleString();
+  const tb=document.getElementById('progressTable');
+  tb.innerHTML=p.length?p.map(x=>`<tr><td class="whitespace-nowrap">${new Date(x.completed_at).toLocaleString()}</td><td class="font-bold">${x.workout_name}</td><td>${(x.items_snapshot||[]).length}</td><td>${x.totalSets}</td><td style="color:#C8FF2E" class="font-bold">${x.totalVolume} kg</td><td><button onclick="delProgress('${x.id}')" class="text-xs text-muted hover:text-red-300">✕</button></td></tr>`).join(''):`<tr><td colspan="6" class="text-center text-muted py-8">No completions yet. Go to Workouts and press Complete.</td></tr>`;
+  const last=[...p].reverse().slice(-12);
+  if(chVolume)chVolume.destroy();
+  chVolume=new Chart(document.getElementById('chartVolume'),{type:'line',data:{labels:last.map((x,i)=>'#'+(p.length-last.length+i+1)),datasets:[{label:'Volume (kg)',data:last.map(x=>x.totalVolume),borderColor:'#C8FF2E',backgroundColor:'rgba(200,255,46,.12)',fill:true,tension:.4,pointBackgroundColor:'#C8FF2E',pointRadius:5}]},options:{plugins:{legend:{labels:{color:'#8AA39A'}}},scales:{y:{ticks:{color:'#8AA39A'},grid:{color:'rgba(255,255,255,.06)'}},x:{ticks:{color:'#8AA39A'},grid:{display:false}}},maintainAspectRatio:false}});
+}
+function delProgress(id){save(K.progress,load(K.progress,[]).filter(x=>x.id!==id));toast('Entry removed.','info');renderProgress();renderDashboard();}
+function clearProgress(){if(!myProgress().length){toast('History is already empty.','info');return;}askConfirm('Clear history?','All your completion records will be removed.','⚠️',()=>{const u=getUser();save(K.progress,load(K.progress,[]).filter(x=>x.user_id!==u.id));toast('Progress history cleared.','info');renderProgress();renderDashboard();});}
+
+/* ================= CODEBASE VIEWER ================= */
+function fileIcon(p){if(p.endsWith('.py'))return'🐍';if(p.endsWith('.html'))return'📄';if(p.endsWith('.css'))return'🎨';if(p.endsWith('.js'))return'⚡';if(p.endsWith('.db'))return'🗄️';if(p.endsWith('.txt'))return'📦';return'📘';}
+function renderCodebase(){
+  const tree=document.getElementById('fileTree');
+  const groups=[['Root',['app.py','requirements.txt','database.db','README.md']],['templates/',BACKEND_FILES.filter(f=>f.path.startsWith('templates/')).map(f=>f.path)],['static/css/',['static/css/style.css']],['static/js/',['static/js/script.js']]];
+  tree.innerHTML=groups.map(([g,files])=>`<div class="text-[11px] font-bold text-muted uppercase tracking-wider mt-2 mb-1">${g}</div>`+files.map(p=>`<div class="fileitem ${p===currentFile?'active':''}" onclick="showFile('${p}')"><span>${fileIcon(p)}</span><span class="mono truncate">${p}</span></div>`).join('')).join('');
+  showFile(currentFile,true);
+}
+function showFile(path,skipTree){currentFile=path;const f=BACKEND_FILES.find(x=>x.path===path);if(!f)return;
+  document.getElementById('codePath').textContent=path;
+  const lines=f.code.split('\n').length;
+  document.getElementById('codeMeta').textContent=`${lines} lines • ${(new Blob([f.code]).size/1024).toFixed(1)} KB • ${f.lang}`;
+  const cv=document.getElementById('codeView');cv.className='language-'+(f.lang==='plaintext'?'plaintext':f.lang);cv.textContent=f.code;
+  if(window.hljs){try{hljs.highlightElement(cv);}catch(e){}}
+  if(!skipTree)renderCodebase();}
+function copyCurrentFile(){const f=BACKEND_FILES.find(x=>x.path===currentFile);navigator.clipboard.writeText(f.code).then(()=>toast(`${currentFile} copied to clipboard.`)).catch(()=>toast('Copy failed.','error'));}
+function copyRunCommands(){navigator.clipboard.writeText('pip install -r requirements.txt\npython app.py').then(()=>toast('Run commands copied.')).catch(()=>toast('Copy failed.','error'));}
+function downloadCurrentFile(){const f=BACKEND_FILES.find(x=>x.path===currentFile);const blob=new Blob([f.code],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=f.path.split('/').pop();a.click();toast(`${f.path} downloaded.`);}
+async function downloadZip(){try{toast('Building project ZIP...','info');const zip=new JSZip();BACKEND_FILES.forEach(f=>{if(f.path==='database.db')return;zip.file('fittrack/'+f.path,f.code);});zip.file('fittrack/database.db.txt','database.db is auto-created on first run of python app.py (see README.md).');const blob=await zip.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fittrack-workout-planner.zip';a.click();toast('Full project ZIP downloaded. Run: python app.py');}catch(e){toast('ZIP failed. Download files individually.','error');}}
+
+/* ================= INIT ================= */
+window.addEventListener('DOMContentLoaded',async()=>{
+  Chart.defaults.font.family='Inter';
+  await initDemo();
+  if(getUser())enterApp();
+});
+</script>
+</body>
+</html>
